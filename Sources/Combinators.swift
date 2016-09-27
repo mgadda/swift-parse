@@ -40,7 +40,7 @@ public func seq<T, U>(
 }
 
 infix operator ~: MultiplicationPrecedence
-func ~<T, U>(
+public func ~<T, U>(
   _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
   _ right: @autoclosure @escaping () -> ([Character]) -> (U, [Character])?
   ) -> ([Character]) -> ((T, U), [Character])? {
