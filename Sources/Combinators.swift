@@ -27,12 +27,12 @@ func accept<T: Equatable>(_ value: T) -> ([T]) -> (T, [T])? {
 // Generate parser which attempts to match first `left`
 // and then `right`. Return .none if both do not parse.
 func seq<T, U>(
-  _ left: @escaping ([Character]) -> (T, [Character])?,
-  _ right: @escaping ([Character]) -> (U, [Character])?
+  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
+  _ right: @autoclosure @escaping () -> ([Character]) -> (U, [Character])?
 ) -> ([Character]) -> ((T, U), [Character])? {
   return { source in
-    return left(source).flatMap { leftResult in
-      return right(leftResult.1).map { rightResult in
+    return left()(source).flatMap { leftResult in
+      return right()(leftResult.1).map { rightResult in
         ((leftResult.0, rightResult.0), rightResult.1)
       }
     }
@@ -41,16 +41,16 @@ func seq<T, U>(
 
 infix operator ~: MultiplicationPrecedence
 func ~<T, U>(
-  _ left: @escaping ([Character]) -> (T, [Character])?,
-  _ right: @escaping ([Character]) -> (U, [Character])?
+  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
+  _ right: @autoclosure @escaping () -> ([Character]) -> (U, [Character])?
   ) -> ([Character]) -> ((T, U), [Character])? {
   return seq(left, right)
 }
 
 infix operator ~>: MultiplicationPrecedence
 func ~><T, U>(
-  _ left: @escaping ([Character]) -> (T, [Character])?,
-  _ right: @escaping ([Character]) -> (U, [Character])?
+  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
+  _ right: @autoclosure @escaping () -> ([Character]) -> (U, [Character])?
   ) -> ([Character]) -> (T, [Character])? {
 
   return map(seq(left, right)) { $0.0 }
@@ -58,43 +58,70 @@ func ~><T, U>(
 
 infix operator <~: MultiplicationPrecedence
 func <~<T, U>(
-  _ left: @escaping ([Character]) -> (T, [Character])?,
-  _ right: @escaping ([Character]) -> (U, [Character])?
+  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
+  _ right: @autoclosure @escaping () -> ([Character]) -> (U, [Character])?
   ) -> ([Character]) -> (U, [Character])? {
 
   return map(seq(left, right)) { $0.1 }
 }
 
-func or<T, U>(
-  _ left: @escaping ([Character]) -> (T, [Character])?,
-  _ right: @escaping ([Character]) -> (U, [Character])?
-  ) -> ([Character]) -> (Either<T, U>, [Character])? {
+// TODO: uncomment and devise mechanism to differentiate between single- and
+// multi-type or operations.
+
+// func or<T, U>(
+//   _ left: @escaping ([Character]) -> (T, [Character])?,
+//   _ right: @escaping ([Character]) -> (U, [Character])?
+//   ) -> ([Character]) -> (Either<T, U>, [Character])? {
+//   return { source in
+//     if let result = left(source) {
+//       return (.left(result.0), result.1)
+//     } else if let result = right(source) {
+//       return (.right(result.0), result.1)
+//     } else {
+//       return .none
+//     }
+//   }
+// }
+
+// infix operator |: AdditionPrecedence
+// func |<T, U>(
+//   _ left: @escaping ([Character]) -> (T, [Character])?,
+//   _ right: @escaping ([Character]) -> (U, [Character])?
+//   ) -> ([Character]) -> (Either<T, U>, [Character])? {
+//   return or(left, right)
+// }
+
+func or<T>(
+  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
+  _ right: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?
+  ) -> ([Character]) -> (T, [Character])? {
   return { source in
-    if let result = left(source) {
-      return (.left(result.0), result.1)
-    } else if let result = right(source) {
-      return (.right(result.0), result.1)
+    if let result = left()(source) {
+      return result
+    } else if let result = right()(source) {
+      return result
     } else {
       return .none
     }
   }
 }
 
-infix operator |: AdditionPrecedence
-func |<T, U>(
-  _ left: @escaping ([Character]) -> (T, [Character])?,
-  _ right: @escaping ([Character]) -> (U, [Character])?
-  ) -> ([Character]) -> (Either<T, U>, [Character])? {
+
+func |<T>(
+  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
+  _ right: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?
+  ) -> ([Character]) -> (T, [Character])? {
   return or(left, right)
 }
 
+
 // Generate parser which matches 0 or more of `parser` argument
 // Always succeeds.
-func rep<T>(_ parser: @escaping ([Character]) -> (T, [Character])?) -> ([Character]) -> ([T], [Character]) {
+func rep<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> ([T], [Character]) {
   let ret = { (source: [Character]) -> ([T], [Character]) in
-
+    let p = parser()
     func aggregate(source: [Character], parsedValues: [T]) -> ([T], [Character]) {
-      if let parseResult = parser(source) {
+      if let parseResult = p(source) {
         return aggregate(
           source: parseResult.1,
           parsedValues: parsedValues + [parseResult.0]
@@ -109,21 +136,21 @@ func rep<T>(_ parser: @escaping ([Character]) -> (T, [Character])?) -> ([Charact
 }
 
 postfix operator *
-postfix func *<T>(_ parser: @escaping ([Character]) -> (T, [Character])?) -> ([Character]) -> ([T], [Character]) {
+postfix func *<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> ([T], [Character]) {
   return rep(parser)
 }
 
 // Generate parser which matches 1 or more of `parser` arugment.
-func rep1<T>(_ parser: @escaping ([Character]) -> (T, [Character])?) -> ([Character]) -> ([T], [Character])? {
+func rep1<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> ([T], [Character])? {
   return { source in
-    seq(parser, rep(parser))(source).map { result in
+    return seq(parser, rep(parser))(source).map { result in
       return ([result.0.0] + result.0.1, result.1)
     }
   }
 }
 
 postfix operator +
-postfix func +<T>(_ parser: @escaping ([Character]) -> (T, [Character])?) -> ([Character]) -> ([T], [Character])? {
+postfix func +<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> ([T], [Character])? {
   return { source in
     seq(parser, rep(parser))(source).map { result in
       return (result.0.1 + [result.0.0], result.1)
@@ -131,30 +158,34 @@ postfix func +<T>(_ parser: @escaping ([Character]) -> (T, [Character])?) -> ([C
   }
 }
 
-func opt<T>(_ parser: @escaping ([Character]) -> (T, [Character])?) -> ([Character]) -> (T?, [Character]) {
+func opt<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> (T?, [Character]) {
   return { source in
-    parser(source).map { (Optional.some($0.0), $0.1) } ?? (.none, source)
+    parser()(source).map { (Optional.some($0.0), $0.1) } ?? (.none, source)
   }
 }
 
 postfix operator *? // because '?' is forbidden
-postfix func *?<T>(_ parser: @escaping ([Character]) -> (T, [Character])?) -> ([Character]) -> (T?, [Character]) {
+postfix func *?<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> (T?, [Character]) {
   return opt(parser)
 }
 
 // Generate parser which converts the parsed result into type U
 func map<T, U>(
-  _ parser: @escaping ([Character]) -> (T, [Character])?,
+  _ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
   fn: @escaping (T) -> U
 ) -> ([Character]) -> (U, [Character])? {
   return { source in
-    parser(source).map { mapResult($0, fn) }
+    parser()(source).map { mapResult($0, fn) }
   }
 }
 
-infix operator ^^
+precedencegroup MapGroup {
+  higherThan: AssignmentPrecedence
+  lowerThan: AdditionPrecedence
+}
+infix operator ^^: MapGroup
 func ^^<T, U>(
-  _ parser: @escaping ([Character]) -> (T, [Character])?,
+  _ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
   fn: @escaping (T) -> U
   ) -> ([Character]) -> (U, [Character])? {
   return map(parser, fn: fn)
@@ -163,3 +194,5 @@ func ^^<T, U>(
 func mapResult<T, U>(_ result: (T, [Character]), _ fn: (T) -> U) -> (U, [Character]) {
   return (fn(result.0), result.1)
 }
+
+func placeholder<T>(_ source: [Character]) -> (T, [Character])? { return .none }

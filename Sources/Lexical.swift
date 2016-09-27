@@ -1,17 +1,11 @@
 enum Token : Equatable {
   case whitespace
   case integerLiteral(Int)
-  case stringLiteral(String)
-  case symbol(Character)
-
+  
   static func ==(lhs: Token, rhs: Token) -> Bool {
     switch (lhs, rhs) {
       case (.whitespace, .whitespace): return true
       case let (.integerLiteral(leftVal), .integerLiteral(rightVal)):
-        return leftVal == rightVal
-      case let (.stringLiteral(leftVal), .stringLiteral(rightVal)):
-        return leftVal == rightVal
-      case let (.symbol(leftVal), .symbol(rightVal)):
         return leftVal == rightVal
       default:
         return false
@@ -37,17 +31,15 @@ func digit(_ source: [Character]) -> (Character, [Character])? {
 
 func integerLiteral(_ source: [Character]) -> (Token, [Character])? {
   let intParser = (accept("+") | accept("-"))*? ~ rep1(digit)
+  
   return intParser(source).flatMap { result in
     var sign = 1
-
-    if let signResult = result.0.0 {
-      switch signResult {
-      case .right:
-        sign = -1
-      default: break
-      }
-    }
-
+    
+    switch result.0.0 {
+    case .some("-"):
+      sign = -1
+    default: break
+    }  
     return Int(String(result.0.1)).map { intVal in
       (.integerLiteral(intVal * sign), result.1)
     }
