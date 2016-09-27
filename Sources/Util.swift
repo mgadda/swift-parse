@@ -1,3 +1,3 @@
-func stringToArray(_ string: String) -> [Character] {
+public func stringToArray(_ string: String) -> [Character] {
   return string.characters.map { $0 }
 }

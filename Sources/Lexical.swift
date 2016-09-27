@@ -1,8 +1,8 @@
-enum Token : Equatable {
+public enum Token : Equatable {
   case whitespace
   case integerLiteral(Int)
   
-  static func ==(lhs: Token, rhs: Token) -> Bool {
+  public static func ==(lhs: Token, rhs: Token) -> Bool {
     switch (lhs, rhs) {
       case (.whitespace, .whitespace): return true
       case let (.integerLiteral(leftVal), .integerLiteral(rightVal)):
@@ -13,23 +13,25 @@ enum Token : Equatable {
   }
 }
 
-func whitespace(_ source: [Character]) -> (Token, [Character])? {
+public func whitespace(_ source: [Character]) -> (Token, [Character])? {
   let parser = map(accept(" ")) { _ in Token.whitespace }
   return parser(source)
 }
 
-func letter(_ source: [Character]) -> (Character, [Character])? {
+public func letter(_ source: [Character]) -> (Character, [Character])? {
   // Without specify the type signature of this anonymous function
   // the compiler bails with expression complexity issues
   return acceptIf(source) { (ch: Character) -> Bool in
     (ch >= "a" && ch <= "z") || (ch >= "A" && ch <= "Z")
   }
 }
-func digit(_ source: [Character]) -> (Character, [Character])? {
+
+public func digit(_ source: [Character]) -> (Character, [Character])? {
   return acceptIf(source) { ch in ch >= "0" && ch <= "9" }
 }
 
-func integerLiteral(_ source: [Character]) -> (Token, [Character])? {
+
+public func integerLiteral(_ source: [Character]) -> (Token, [Character])? {
   let intParser = (accept("+") | accept("-"))*? ~ rep1(digit)
   
   return intParser(source).flatMap { result in
