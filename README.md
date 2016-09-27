@@ -1,7 +1,7 @@
 ## Overview
 
-SwiftParse is a parser combinator library. This project is in its earliest 
-iterations and is not stable. Maybe that'll change someday! 
+SwiftParse is a parser combinator library. This project is in its earliest
+iterations and is not stable. Maybe that'll change someday!
 
 ## Examples
 
@@ -28,7 +28,7 @@ loop = accept("[") ~ operation* ~ accept("]") ^^ { Brainfuck.loop($0.0.1) }
 let program = operation*
 ```
 
-Now let's execute it and see what parsed:
+Now let's execute it and see what it parsed:
 ```swift
 let (parseTree, unparsed) = program(stringToArray("+[>,]"))
 ```
@@ -37,9 +37,9 @@ This generates a parse tree of:
 
 ```swift
 [
-  SwiftParse.Brainfuck.incByte, 
+  SwiftParse.Brainfuck.incByte,
   SwiftParse.Brainfuck.loop([
-    SwiftParse.Brainfuck.incPointer, 
+    SwiftParse.Brainfuck.incPointer,
     SwiftParse.Brainfuck.readByte
   ])
 ]
