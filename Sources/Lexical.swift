@@ -27,19 +27,10 @@ public func letter(_ source: [Character]) -> (Character, [Character])? {
 }
 
 public func word(_ value: String) -> ([Character]) -> (String, [Character])? {
-  let wordParser = letter+ ^^ { (cs: [Character]) -> String in
-    print(cs)
-    return String(cs)
-  }
+  let wordParser = letter+ ^^ { String($0) }
 
   return { source in
-    return wordParser(source).flatMap { word in
-      if word.0 == value {
-        return .some(word)
-      } else {
-        return .none
-      }
-    }
+    wordParser(source).filter { $0.0 == value }
   }
 }
 
