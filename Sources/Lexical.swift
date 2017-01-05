@@ -26,6 +26,23 @@ public func letter(_ source: [Character]) -> (Character, [Character])? {
   }
 }
 
+public func word(_ value: String) -> ([Character]) -> (String, [Character])? {
+  let wordParser = letter+ ^^ { (cs: [Character]) -> String in
+    print(cs)
+    return String(cs)
+  }
+
+  return { source in
+    return wordParser(source).flatMap { word in
+      if word.0 == value {
+        return .some(word)
+      } else {
+        return .none
+      }
+    }
+  }
+}
+
 public func digit(_ source: [Character]) -> (Character, [Character])? {
   return acceptIf(source) { ch in ch >= "0" && ch <= "9" }
 }
