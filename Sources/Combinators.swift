@@ -175,6 +175,15 @@ public func map<T, U>(
   }
 }
 
+public func flatMap<T, U>(
+  _ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
+  fn: @escaping (T) -> U?
+  ) -> ([Character]) -> (U, [Character])? {
+  return { source in
+    parser()(source).flatMap { flatMapResult($0, fn) }
+  }
+}
+
 precedencegroup MapGroup {
   higherThan: AssignmentPrecedence
   lowerThan: AdditionPrecedence
@@ -187,8 +196,20 @@ public func ^^<T, U>(
   return map(parser, fn: fn)
 }
 
+infix operator ^^-: MapGroup
+public func ^^-<T, U>(
+  _ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
+  fn: @escaping (T) -> U?
+  ) -> ([Character]) -> (U, [Character])? {
+  return flatMap(parser, fn: fn)
+}
+
 public func mapResult<T, U>(_ result: (T, [Character]), _ fn: (T) -> U) -> (U, [Character]) {
   return (fn(result.0), result.1)
+}
+
+public func flatMapResult<T, U>(_ result: (T, [Character]), _ fn: (T) -> U?) -> (U, [Character])? {
+  return fn(result.0).map { ($0, result.1) }
 }
 
 public func placeholder<T>(_ source: [Character]) -> (T, [Character])? { return .none }

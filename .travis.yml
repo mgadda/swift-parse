@@ -1,0 +1,11 @@
+language: objective-c
+osx_image: xcode8.2
+env:
+  - TOOLCHAINS=swift
+script:
+  - swift package fetch
+  - swift test
+#xcode_project: TypedOperation.xcodeproj
+# xcode_scheme: "SwiftParse"
+# xcode_sdk: iphonesimulator10.0
+# script: xcodebuild test -scheme "SwiftParse" -sdk iphonesimulator -destination "name=iPhone SE"

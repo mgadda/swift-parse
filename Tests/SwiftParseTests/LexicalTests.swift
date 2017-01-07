@@ -37,37 +37,8 @@ class LexicalTests : XCTestCase, ParserHelpers {
     assertParsed(letter, input: ["A"], "A", [Character]())
     assertParsed(letter, input: ["Z"], "Z", [Character]())
   }
+
+  func testWord() {
+    assertParsed(word("swift"), input: ["s", "w", "i", "f", "t"], "swift", [Character]())
+  }
 }
-
-
-/*
-// Matches a digit followed by whitespace
-let digitWhitespace = seq(digit, whitespace)
-digitWhitespace(stringToArray("9 6"))
-digitWhitespace(stringToArray(" 9")) // nil
-
-// Matches 0 or more spaces
-rep(whitespace)(stringToArray("   "))
-rep(whitespace)(stringToArray("123"))
-
-// Matches 1 or more spaces
-rep1(whitespace)(stringToArray("1")) // nil
-
-let twoWhitespaces = whitespace ~ whitespace
-twoWhitespaces(stringToArray("  "))
-
-let zeroOrMoreWhitespaces = whitespace*
-zeroOrMoreWhitespaces(stringToArray(""))
-
-let oneOrMoreWhitespaces = whitespace+
-oneOrMoreWhitespaces(stringToArray("  0"))
-
-let parenParser = accept("(") <~ whitespace* ~ integerLiteral* ~ whitespace ~> accept(")")
-parenParser(stringToArray("( 34 )"))?.0.0.1
-
-integerLiteral(stringToArray("-12345"))
-
-let foo = digit ^^ { (t: Character) -> Int in Int(String(t))! }
-let fooResult = foo(stringToArray("3"))
-print(fooResult)
-*/
