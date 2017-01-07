@@ -1,7 +1,9 @@
+import SwiftExt
+
 public enum Token : Equatable {
   case whitespace
   case integerLiteral(Int)
-  
+
   public static func ==(lhs: Token, rhs: Token) -> Bool {
     switch (lhs, rhs) {
       case (.whitespace, .whitespace): return true
