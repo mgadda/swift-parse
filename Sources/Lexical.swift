@@ -43,15 +43,15 @@ public func digit(_ source: [Character]) -> (Character, [Character])? {
 
 public func integerLiteral(_ source: [Character]) -> (Token, [Character])? {
   let intParser = (accept("+") | accept("-"))*? ~ rep1(digit)
-  
+
   return intParser(source).flatMap { result in
     var sign = 1
-    
+
     switch result.0.0 {
     case .some("-"):
       sign = -1
     default: break
-    }  
+    }
     return Int(String(result.0.1)).map { intVal in
       (.integerLiteral(intVal * sign), result.1)
     }
