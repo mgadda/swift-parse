@@ -3,6 +3,8 @@
 SwiftParse is a parser combinator library. This project is in its earliest
 iterations and is not stable. Maybe that'll change someday!
 
+[![Build Status](https://travis-ci.org/mgadda/swift-parse.svg?branch=master)](https://travis-ci.org/mgadda/swift-parse)
+
 ## Examples
 
 Let's build a parser for the brainfuck language. It's a terrible language, but
