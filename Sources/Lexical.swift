@@ -16,7 +16,7 @@ public enum Token : Equatable {
 }
 
 public func whitespace(_ source: [Character]) -> (Token, [Character])? {
-  let parser = map(accept(" ")) { _ in Token.whitespace }
+  let parser = map(accept(Character(" "))) { _ in Token.whitespace }
   return parser(source)
 }
 
@@ -34,6 +34,10 @@ public func word(_ value: String) -> ([Character]) -> (String, [Character])? {
   return { source in
     wordParser(source).filter { $0.0 == value }
   }
+}
+
+public func char(_ value: Character) -> ([Character]) -> (String, [Character])? {
+  return accept(value) ^^ { String($0) }
 }
 
 public func digit(_ source: [Character]) -> (Character, [Character])? {

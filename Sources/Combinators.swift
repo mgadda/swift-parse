@@ -26,10 +26,10 @@ public func accept<T: Equatable>(_ value: T) -> ([T]) -> (T, [T])? {
 
 // Generate parser which attempts to match first `left`
 // and then `right`. Return .none if both do not parse.
-public func seq<T, U>(
-  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
-  _ right: @autoclosure @escaping () -> ([Character]) -> (U, [Character])?
-) -> ([Character]) -> ((T, U), [Character])? {
+public func seq<T, U, StreamToken>(
+  _ left: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?,
+  _ right: @autoclosure @escaping () -> ([StreamToken]) -> (U, [StreamToken])?
+) -> ([StreamToken]) -> ((T, U), [StreamToken])? {
   return { source in
     return left()(source).flatMap { leftResult in
       return right()(leftResult.1).map { rightResult in
@@ -40,27 +40,27 @@ public func seq<T, U>(
 }
 
 infix operator ~: MultiplicationPrecedence
-public func ~<T, U>(
-  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
-  _ right: @autoclosure @escaping () -> ([Character]) -> (U, [Character])?
-  ) -> ([Character]) -> ((T, U), [Character])? {
+public func ~<T, U, StreamToken>(
+  _ left: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?,
+  _ right: @autoclosure @escaping () -> ([StreamToken]) -> (U, [StreamToken])?
+  ) -> ([StreamToken]) -> ((T, U), [StreamToken])? {
   return seq(left, right)
 }
 
 infix operator ~>: MultiplicationPrecedence
-public func ~><T, U>(
-  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
-  _ right: @autoclosure @escaping () -> ([Character]) -> (U, [Character])?
-  ) -> ([Character]) -> (T, [Character])? {
+public func ~><T, U, StreamToken>(
+  _ left: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?,
+  _ right: @autoclosure @escaping () -> ([StreamToken]) -> (U, [StreamToken])?
+  ) -> ([StreamToken]) -> (T, [StreamToken])? {
 
   return map(seq(left, right)) { $0.0 }
 }
 
 infix operator <~: MultiplicationPrecedence
-public func <~<T, U>(
-  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
-  _ right: @autoclosure @escaping () -> ([Character]) -> (U, [Character])?
-  ) -> ([Character]) -> (U, [Character])? {
+public func <~<T, U, StreamToken>(
+  _ left: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?,
+  _ right: @autoclosure @escaping () -> ([StreamToken]) -> (U, [StreamToken])?
+  ) -> ([StreamToken]) -> (U, [StreamToken])? {
 
   return map(seq(left, right)) { $0.1 }
 }
@@ -91,10 +91,10 @@ public func <~<T, U>(
 //   return or(left, right)
 // }
 
-public func or<T>(
-  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
-  _ right: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?
-  ) -> ([Character]) -> (T, [Character])? {
+public func or<T, StreamToken>(
+  _ left: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?,
+  _ right: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?
+  ) -> ([StreamToken]) -> (T, [StreamToken])? {
   return { source in
     if let result = left()(source) {
       return result
@@ -107,20 +107,20 @@ public func or<T>(
 }
 
 
-public func |<T>(
-  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
-  _ right: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?
-  ) -> ([Character]) -> (T, [Character])? {
+public func |<T, StreamToken>(
+  _ left: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?,
+  _ right: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?
+  ) -> ([StreamToken]) -> (T, [StreamToken])? {
   return or(left, right)
 }
 
 
 // Generate parser which matches 0 or more of `parser` argument
 // Always succeeds.
-public func rep<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> ([T], [Character]) {
-  let ret = { (source: [Character]) -> ([T], [Character]) in
+public func rep<T, StreamToken>(_ parser: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?) -> ([StreamToken]) -> ([T], [StreamToken]) {
+  let ret = { (source: [StreamToken]) -> ([T], [StreamToken]) in
     let p = parser()
-    func aggregate(source: [Character], parsedValues: [T]) -> ([T], [Character]) {
+    func aggregate(source: [StreamToken], parsedValues: [T]) -> ([T], [StreamToken]) {
       if let parseResult = p(source) {
         return aggregate(
           source: parseResult.1,
@@ -136,12 +136,12 @@ public func rep<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [
 }
 
 postfix operator *
-public postfix func *<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> ([T], [Character]) {
+public postfix func *<T, StreamToken>(_ parser: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?) -> ([StreamToken]) -> ([T], [StreamToken]) {
   return rep(parser)
 }
 
 // Generate parser which matches 1 or more of `parser` arugment.
-public func rep1<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> ([T], [Character])? {
+public func rep1<T, StreamToken>(_ parser: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?) -> ([StreamToken]) -> ([T], [StreamToken])? {
   return { source in
     return seq(parser, rep(parser))(source).map { result in
       return ([result.0.0] + result.0.1, result.1)
@@ -150,35 +150,35 @@ public func rep1<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, 
 }
 
 postfix operator +
-public postfix func +<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> ([T], [Character])? {
+public postfix func +<T, StreamToken>(_ parser: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?) -> ([StreamToken]) -> ([T], [StreamToken])? {
   return rep1(parser)
 }
 
-public func opt<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> (T?, [Character]) {
+public func opt<T, StreamToken>(_ parser: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?) -> ([StreamToken]) -> (T?, [StreamToken]) {
   return { source in
     parser()(source).map { (Optional.some($0.0), $0.1) } ?? (.none, source)
   }
 }
 
 postfix operator *? // because '?' is forbidden
-public postfix func *?<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> (T?, [Character]) {
+public postfix func *?<T, StreamToken>(_ parser: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?) -> ([StreamToken]) -> (T?, [StreamToken]) {
   return opt(parser)
 }
 
 // Generate parser which converts the parsed result into type U
-public func map<T, U>(
-  _ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
+public func map<T, U, StreamToken>(
+  _ parser: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?,
   fn: @escaping (T) -> U
-) -> ([Character]) -> (U, [Character])? {
+) -> ([StreamToken]) -> (U, [StreamToken])? {
   return { source in
     parser()(source).map { mapResult($0, fn) }
   }
 }
 
-public func flatMap<T, U>(
-  _ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
+public func flatMap<T, U, StreamToken>(
+  _ parser: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?,
   fn: @escaping (T) -> U?
-  ) -> ([Character]) -> (U, [Character])? {
+  ) -> ([StreamToken]) -> (U, [StreamToken])? {
   return { source in
     parser()(source).flatMap { flatMapResult($0, fn) }
   }
@@ -189,10 +189,10 @@ precedencegroup MapGroup {
   lowerThan: AdditionPrecedence
 }
 infix operator ^^: MapGroup
-public func ^^<T, U>(
-  _ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
+public func ^^<T, U, StreamToken>(
+  _ parser: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?,
   fn: @escaping (T) -> U
-  ) -> ([Character]) -> (U, [Character])? {
+  ) -> ([StreamToken]) -> (U, [StreamToken])? {
   return map(parser, fn: fn)
 }
 
@@ -204,12 +204,12 @@ public func ^^-<T, U>(
   return flatMap(parser, fn: fn)
 }
 
-public func mapResult<T, U>(_ result: (T, [Character]), _ fn: (T) -> U) -> (U, [Character]) {
+public func mapResult<T, U, StreamToken>(_ result: (T, [StreamToken]), _ fn: (T) -> U) -> (U, [StreamToken]) {
   return (fn(result.0), result.1)
 }
 
-public func flatMapResult<T, U>(_ result: (T, [Character]), _ fn: (T) -> U?) -> (U, [Character])? {
+public func flatMapResult<T, U, StreamToken>(_ result: (T, [StreamToken]), _ fn: (T) -> U?) -> (U, [StreamToken])? {
   return fn(result.0).map { ($0, result.1) }
 }
 
-public func placeholder<T>(_ source: [Character]) -> (T, [Character])? { return .none }
+public func placeholder<T, StreamToken>(_ source: [StreamToken]) -> (T, [StreamToken])? { return .none }
