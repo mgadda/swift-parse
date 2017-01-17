@@ -1,5 +1,9 @@
 import SwiftExt
 
+// TODO: replace HeterogeneousParser references below with this typealias
+// once https://bugs.swift.org/browse/SR-3640 has been resolved.
+// typealias LexicalParser = HeterogeneousParser<Character, String>
+
 public enum Token : Equatable {
   case whitespace
   case integerLiteral(Int)
@@ -28,7 +32,7 @@ public func letter(_ source: [Character]) -> (Character, [Character])? {
   }
 }
 
-public func word(_ value: String) -> ([Character]) -> (String, [Character])? {
+public func word(_ value: String) -> HeterogeneousParser<Character, String> {
   let wordParser = letter+ ^^ { String($0) }
 
   return { source in
@@ -36,7 +40,7 @@ public func word(_ value: String) -> ([Character]) -> (String, [Character])? {
   }
 }
 
-public func char(_ value: Character) -> ([Character]) -> (String, [Character])? {
+public func char(_ value: Character) -> HeterogeneousParser<Character, String> {
   return accept(value) ^^ { String($0) }
 }
 
