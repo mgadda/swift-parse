@@ -82,7 +82,7 @@ public func map<T1, T2, T3, T4, T5, T6, T7, T8, U, StreamToken>(
 
 
 public func flatMap<T, U, StreamToken>(
-  _ parser: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?,
+  _ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>,
   fn: @escaping (T) -> U?
   ) -> HeterogeneousParser<StreamToken, U> {
   return { source in
@@ -96,66 +96,66 @@ precedencegroup MapGroup {
 }
 infix operator ^^: MapGroup
 public func ^^<T, U, StreamToken>(
-  _ parser: @autoclosure @escaping () -> ([StreamToken]) -> (T, [StreamToken])?,
+  _ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>,
   fn: @escaping (T) -> U
   ) -> HeterogeneousParser<StreamToken, U> {
   return map(parser, fn: fn)
 }
 
 public func ^^<T1, T2, U, StreamToken>(
-  _ parser: @autoclosure @escaping () -> ([StreamToken]) -> ((T1, T2), [StreamToken])?,
+  _ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, (T1, T2)>,
   fn: @escaping (T1, T2) -> U
   ) -> HeterogeneousParser<StreamToken, U> {
   return map(parser, fn: fn)
 }
 
 public func ^^<T1, T2, T3, U, StreamToken>(
-  _ parser: @autoclosure @escaping () -> ([StreamToken]) -> (((T1, T2), T3), [StreamToken])?,
+  _ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, ((T1, T2), T3)>,
   fn: @escaping (T1, T2, T3) -> U
   ) -> HeterogeneousParser<StreamToken, U> {
   return map(parser, fn: fn)
 }
 
 public func ^^<T1, T2, T3, T4, U, StreamToken>(
-  _ parser: @autoclosure @escaping () -> ([StreamToken]) -> ((((T1, T2), T3), T4), [StreamToken])?,
+  _ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, (((T1, T2), T3), T4)>,
   fn: @escaping (T1, T2, T3, T4) -> U
   ) -> HeterogeneousParser<StreamToken, U> {
   return map(parser, fn: fn)
 }
 
 public func ^^<T1, T2, T3, T4, T5, U, StreamToken>(
-  _ parser: @autoclosure @escaping () -> ([StreamToken]) -> (((((T1, T2), T3), T4), T5), [StreamToken])?,
+  _ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, ((((T1, T2), T3), T4), T5)>,
   fn: @escaping (T1, T2, T3, T4, T5) -> U
   ) -> HeterogeneousParser<StreamToken, U> {
   return map(parser, fn: fn)
 }
 
 public func ^^<T1, T2, T3, T4, T5, T6, U, StreamToken>(
-  _ parser: @autoclosure @escaping () -> ([StreamToken]) -> ((((((T1, T2), T3), T4), T5), T6), [StreamToken])?,
+  _ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, (((((T1, T2), T3), T4), T5), T6)>,
   fn: @escaping (T1, T2, T3, T4, T5, T6) -> U
   ) -> HeterogeneousParser<StreamToken, U> {
   return map(parser, fn: fn)
 }
 
 public func ^^<T1, T2, T3, T4, T5, T6, T7, U, StreamToken>(
-  _ parser: @autoclosure @escaping () -> ([StreamToken]) -> (((((((T1, T2), T3), T4), T5), T6), T7), [StreamToken])?,
+  _ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, ((((((T1, T2), T3), T4), T5), T6), T7)>,
   fn: @escaping (T1, T2, T3, T4, T5, T6, T7) -> U
   ) -> HeterogeneousParser<StreamToken, U> {
   return map(parser, fn: fn)
 }
 
 public func ^^<T1, T2, T3, T4, T5, T6, T7, T8, U, StreamToken>(
-  _ parser: @autoclosure @escaping () -> ([StreamToken]) -> ((((((((T1, T2), T3), T4), T5), T6), T7), T8), [StreamToken])?,
+  _ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, (((((((T1, T2), T3), T4), T5), T6), T7), T8)>,
   fn: @escaping (T1, T2, T3, T4, T5, T6, T7, T8) -> U
   ) -> HeterogeneousParser<StreamToken, U> {
   return map(parser, fn: fn)
 }
 
 infix operator ^^-: MapGroup
-public func ^^-<T, U>(
-  _ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
+public func ^^-<T, U, StreamToken>(
+  _ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>,
   fn: @escaping (T) -> U?
-  ) -> ([Character]) -> (U, [Character])? {
+  ) -> HeterogeneousParser<StreamToken, U> {
   return flatMap(parser, fn: fn)
 }
 
