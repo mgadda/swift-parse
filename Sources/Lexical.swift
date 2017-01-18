@@ -22,7 +22,7 @@ public enum Token : Equatable {
 }
 
 public func whitespace(_ source: [Character]) -> (Token, [Character])? {
-  let parser = map(accept(Character(" "))) { _ in Token.whitespace }
+  let parser = map(char(" ")) { _ in Token.whitespace }
   return parser(source)
 }
 
@@ -52,7 +52,7 @@ public func digit(_ source: [Character]) -> (Character, [Character])? {
 
 
 public func integerLiteral(_ source: [Character]) -> (Token, [Character])? {
-  let intParser = (accept("+") | accept("-"))*? ~ rep1(digit)
+  let intParser = (char("+") | char("-"))*? ~ rep1(digit)
 
   return intParser(source).flatMap { result in
     var sign = 1
