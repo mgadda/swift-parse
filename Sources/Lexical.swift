@@ -1,7 +1,9 @@
 import SwiftExt
 
 // TODO: replace HeterogeneousParser references below with this typealias
-// once https://bugs.swift.org/browse/SR-3640 has been resolved.
+// once Xcode 8.2, which fixes  https://bugs.swift.org/browse/SR-3640 has 
+// been released.
+//
 // typealias LexicalParser = HeterogeneousParser<Character, String>
 
 public enum Token : Equatable {
