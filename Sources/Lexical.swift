@@ -6,23 +6,15 @@ import SwiftExt
 //
 // typealias LexicalParser = HeterogeneousParser<Character, String>
 
-public enum Token : Equatable {
-  case whitespace
-  case integerLiteral(Int)
-
-  public static func ==(lhs: Token, rhs: Token) -> Bool {
-    switch (lhs, rhs) {
-      case (.whitespace, .whitespace): return true
-      case let (.integerLiteral(leftVal), .integerLiteral(rightVal)):
-        return leftVal == rightVal
-      default:
-        return false
-    }
+public func whitespace<T>(token: T) -> HeterogeneousParser<Character, T> {
+  let parser = whitespaceWithContent ^^ { _ in token }
+  return { source in
+    parser(source)
   }
 }
 
-public func whitespace(_ source: [Character]) -> (Token, [Character])? {
-  let parser = map(char(" ")) { _ in Token.whitespace }
+public func whitespaceWithContent(_ source: [Character]) -> (String, [Character])? {
+  let parser = char(" ") | char("\n") | char("\t")
   return parser(source)
 }
 
@@ -51,7 +43,7 @@ public func digit(_ source: [Character]) -> (Character, [Character])? {
 }
 
 
-public func integerLiteral(_ source: [Character]) -> (Token, [Character])? {
+public func integerLiteral(_ source: [Character]) -> (Int, [Character])? {
   let intParser = (char("+") | char("-"))*? ~ rep1(digit)
 
   return intParser(source).flatMap { result in
@@ -63,7 +55,7 @@ public func integerLiteral(_ source: [Character]) -> (Token, [Character])? {
     default: break
     }
     return Int(String(result.0.1)).map { intVal in
-      (.integerLiteral(intVal * sign), result.1)
+      (intVal * sign, result.1)
     }
   }
 }
