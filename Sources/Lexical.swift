@@ -68,3 +68,14 @@ public func integerLiteral(_ source: [Character]) -> (Token, [Character])? {
   }
 }
 
+// TODO: support multi-character (String) stopChars 
+public func comment<T>(startingWith: String, until stopChar: Character = "\n", token: T) -> HeterogeneousParser<Character, T> {
+  let parser = accept(stringToArray(startingWith)) ~ until(stopChar) ^^ { _ in token }
+  return { source in parser(source) }
+}
+
+public func commentWithContent(startingWith: String, until stopChar: Character = "\n") -> HeterogeneousParser<Character, String> {
+  let parser = accept(stringToArray(startingWith)) ~ until(stopChar) ^^ { (_, comment) in String(comment) }
+  return { source in parser(source) }
+}
+
