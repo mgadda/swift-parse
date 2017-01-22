@@ -187,5 +187,15 @@ public postfix func *?<T, StreamToken>(_ parser: @autoclosure @escaping () -> He
   return opt(parser)
 }
 
+public func not<T: Equatable>(_ value: T) -> HomogeneousParser<T> {
+  return { source in
+    return acceptIf(source) { $0 != value }
+  }
+}
+
+public func until<T: Equatable>(_ value: T) -> HeterogeneousParser<T, [T]> {
+  return rep1(not(value))
+}
+
 
 public func placeholder<T, StreamToken>(_ source: [StreamToken]) -> (T, [StreamToken])? { return .none }
