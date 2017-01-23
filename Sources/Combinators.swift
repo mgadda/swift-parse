@@ -35,10 +35,10 @@ public func accept<T: Equatable>(_ value: T) -> HomogeneousParser<T> {
 func accept<T: Equatable>(_ values: [T]) -> HeterogeneousParser<T, [T]> {
   let parsers = values.map { accept($0) }
   typealias Result = ([T], [T])
-  let initial: Result? = ([], values)
 
   return { (source: [T]) -> Result? in
-    parsers.reduce(initial, { (maybeResult, parser) in
+    let initial: Result? = ([], source)
+    return parsers.reduce(initial, { (maybeResult, parser) in
       maybeResult.flatMap { result in
         parser(result.1).map { (result.0 + [$0.0], $0.1) }
       }
