@@ -11,23 +11,29 @@ Let's build a parser for the brainfuck language. It's a terrible language, but
 trivial to build a parser for.
 
 ```swift
-enum Brainfuck {
+import SwiftParser
+
+enum Instruction {
   case incPointer, decPointer, incByte, decByte, writeByte, readByte
-  case loop([Brainfuck])
+  case loop([Instruction])
 }
 
-typealias OperationParser = ([Character]) -> (Brainfuck, [Character])?
-typealias LoopParser = ([Character]) -> (Brainfuck, [Character])?
-let incPointer = accept(">") ^^ { _ in Brainfuck.incPointer }
-let decPointer = accept("<") ^^ { _ in Brainfuck.decPointer }
-let incByte = accept("+") ^^ { _ in Brainfuck.incByte }
-let decByte = accept("-") ^^ { _ in Brainfuck.decByte }
-let writeByte = accept(".") ^^ { _ in Brainfuck.writeByte }
-let readByte = accept(",") ^^ { _ in Brainfuck.readByte }
+typealias OperationParser = HeterogeneousParser<Character, Instruction>
+typealias LoopParser = HeterogeneousParser<Character, Instruction>
+
+let incPointer = char(">") ^^ { _ in Instruction.incPointer }
+let decPointer = char("<") ^^ { _ in Instruction.decPointer }
+let incByte = char("+") ^^ { _ in Instruction.incByte }
+let decByte = char("-") ^^ { _ in Instruction.decByte }
+let writeByte = char(".") ^^ { _ in Instruction.writeByte }
+let readByte = char(",") ^^ { _ in Instruction.readByte }
+
 var loop: LoopParser = placeholder
 let operation: OperationParser = incPointer | decPointer | incByte | decByte | writeByte | readByte | loop
-loop = accept("[") ~ operation* ~ accept("]") ^^ { Brainfuck.loop($0.0.1) }
-let program = operation*
+
+loop = accept("[") ~ operation* ~ accept("]") ^^ { (_, operations, _) in Instruction.loop(operations) }
+
+let program = operation+
 ```
 
 Now let's execute it and see what it parsed:

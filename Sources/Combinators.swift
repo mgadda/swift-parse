@@ -1,3 +1,9 @@
+import SwiftExt
+
+public typealias HomogeneousParser<T> = ([T]) -> (T, [T])?
+public typealias HeterogeneousParser<StreamToken, ParsedOutput> =
+  ([StreamToken]) -> (ParsedOutput, [StreamToken])?
+
 public func head<Element>(_ source: [Element]) -> Element? {
   if source.count > 0 {
     return .some(source[0])
@@ -7,7 +13,11 @@ public func head<Element>(_ source: [Element]) -> Element? {
 }
 
 public func tail<Element>(_ source: [Element]) -> [Element] {
-  return Array(source[1..<source.count])
+  if source.count <= 1 {
+    return []
+  } else {
+    return Array(source[1..<source.count])
+  }
 }
 
 public func acceptIf<T>(_ source: [T], fn: @escaping (T) -> Bool) -> (T, [T])? {
@@ -20,16 +30,32 @@ public func acceptIf<T>(_ source: [T], fn: @escaping (T) -> Bool) -> (T, [T])? {
   }
 }
 
-public func accept<T: Equatable>(_ value: T) -> ([T]) -> (T, [T])? {
+// Generates a parser which matches a single value of type T
+public func accept<T: Equatable>(_ value: T) -> HomogeneousParser<T> {
   return { source in acceptIf(source) { $0 == value } }
+}
+
+// Generates a parser which matches an array of values of type T
+func accept<T: Equatable>(_ values: [T]) -> HeterogeneousParser<T, [T]> {
+  let parsers = values.map { accept($0) }
+  typealias Result = ([T], [T])
+
+  return { (source: [T]) -> Result? in
+    let initial: Result? = ([], source)
+    return parsers.reduce(initial, { (maybeResult, parser) in
+      maybeResult.flatMap { result in
+        parser(result.1).map { (result.0 + [$0.0], $0.1) }
+      }
+    })
+  }
 }
 
 // Generate parser which attempts to match first `left`
 // and then `right`. Return .none if both do not parse.
-public func seq<T, U>(
-  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
-  _ right: @autoclosure @escaping () -> ([Character]) -> (U, [Character])?
-) -> ([Character]) -> ((T, U), [Character])? {
+public func seq<T, U, StreamToken>(
+  _ left: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>,
+  _ right: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, U>
+) -> HeterogeneousParser<StreamToken, (T, U)> {
   return { source in
     return left()(source).flatMap { leftResult in
       return right()(leftResult.1).map { rightResult in
@@ -40,27 +66,27 @@ public func seq<T, U>(
 }
 
 infix operator ~: MultiplicationPrecedence
-public func ~<T, U>(
-  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
-  _ right: @autoclosure @escaping () -> ([Character]) -> (U, [Character])?
-  ) -> ([Character]) -> ((T, U), [Character])? {
+public func ~<T, U, StreamToken>(
+  _ left: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>,
+  _ right: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, U>
+  ) -> HeterogeneousParser<StreamToken, (T, U)> {
   return seq(left, right)
 }
 
 infix operator ~>: MultiplicationPrecedence
-public func ~><T, U>(
-  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
-  _ right: @autoclosure @escaping () -> ([Character]) -> (U, [Character])?
-  ) -> ([Character]) -> (T, [Character])? {
+public func ~><T, U, StreamToken>(
+  _ left: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>,
+  _ right: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, U>
+  ) -> HeterogeneousParser<StreamToken, T> {
 
   return map(seq(left, right)) { $0.0 }
 }
 
 infix operator <~: MultiplicationPrecedence
-public func <~<T, U>(
-  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
-  _ right: @autoclosure @escaping () -> ([Character]) -> (U, [Character])?
-  ) -> ([Character]) -> (U, [Character])? {
+public func <~<T, U, StreamToken>(
+  _ left: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>,
+  _ right: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, U>
+  ) -> HeterogeneousParser<StreamToken, U> {
 
   return map(seq(left, right)) { $0.1 }
 }
@@ -91,10 +117,10 @@ public func <~<T, U>(
 //   return or(left, right)
 // }
 
-public func or<T>(
-  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
-  _ right: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?
-  ) -> ([Character]) -> (T, [Character])? {
+public func or<T, StreamToken>(
+  _ left: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>,
+  _ right: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>
+  ) -> HeterogeneousParser<StreamToken, T> {
   return { source in
     if let result = left()(source) {
       return result
@@ -106,21 +132,19 @@ public func or<T>(
   }
 }
 
-
-public func |<T>(
-  _ left: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
-  _ right: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?
-  ) -> ([Character]) -> (T, [Character])? {
+public func |<T, StreamToken>(
+  _ left: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>,
+  _ right: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>
+  ) -> HeterogeneousParser<StreamToken, T> {
   return or(left, right)
 }
 
-
 // Generate parser which matches 0 or more of `parser` argument
 // Always succeeds.
-public func rep<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> ([T], [Character]) {
-  let ret = { (source: [Character]) -> ([T], [Character]) in
+public func rep<T, StreamToken>(_ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>) -> ([StreamToken]) -> ([T], [StreamToken]) {
+  let ret = { (source: [StreamToken]) -> ([T], [StreamToken]) in
     let p = parser()
-    func aggregate(source: [Character], parsedValues: [T]) -> ([T], [Character]) {
+    func aggregate(source: [StreamToken], parsedValues: [T]) -> ([T], [StreamToken]) {
       if let parseResult = p(source) {
         return aggregate(
           source: parseResult.1,
@@ -136,12 +160,12 @@ public func rep<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [
 }
 
 postfix operator *
-public postfix func *<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> ([T], [Character]) {
+public postfix func *<T, StreamToken>(_ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>) -> ([StreamToken]) -> ([T], [StreamToken]) {
   return rep(parser)
 }
 
 // Generate parser which matches 1 or more of `parser` arugment.
-public func rep1<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> ([T], [Character])? {
+public func rep1<T, StreamToken>(_ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>) -> HeterogeneousParser<StreamToken, [T]> {
   return { source in
     return seq(parser, rep(parser))(source).map { result in
       return ([result.0.0] + result.0.1, result.1)
@@ -150,66 +174,74 @@ public func rep1<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, 
 }
 
 postfix operator +
-public postfix func +<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> ([T], [Character])? {
+public postfix func +<T, StreamToken>(_ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>) -> HeterogeneousParser<StreamToken, [T]> {
   return rep1(parser)
 }
 
-public func opt<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> (T?, [Character]) {
+public func opt<T, StreamToken>(_ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>) -> HeterogeneousParser<StreamToken, T?> {
   return { source in
     parser()(source).map { (Optional.some($0.0), $0.1) } ?? (.none, source)
   }
 }
 
 postfix operator *? // because '?' is forbidden
-public postfix func *?<T>(_ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?) -> ([Character]) -> (T?, [Character]) {
+public postfix func *?<T, StreamToken>(_ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>) -> HeterogeneousParser<StreamToken, T?> {
   return opt(parser)
 }
 
-// Generate parser which converts the parsed result into type U
-public func map<T, U>(
-  _ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
-  fn: @escaping (T) -> U
-) -> ([Character]) -> (U, [Character])? {
+public func placeholder<T, StreamToken>(_ source: [StreamToken]) -> (T, [StreamToken])? { return .none }
+
+public func not<T: Equatable>(_ value: T) -> HomogeneousParser<T> {
   return { source in
-    parser()(source).map { mapResult($0, fn) }
+    return acceptIf(source) { $0 != value }
   }
 }
 
-public func flatMap<T, U>(
-  _ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
-  fn: @escaping (T) -> U?
-  ) -> ([Character]) -> (U, [Character])? {
+// Generate parser which fails if parser succeeds and succeeds if parser fails
+// on `source`.
+public func not<T, U>(_ parser: @escaping HeterogeneousParser<T, U>) -> HomogeneousParser<T> {
   return { source in
-    parser()(source).flatMap { flatMapResult($0, fn) }
+    let result = parser(source)
+    if result.isDefined {
+      return nil
+    } else {
+      // parser may parse multiple elements, there's no way of knowing
+      // how much of the source it _would_ have consumed, had it succeeded.
+      // is this because parsers are limited to return Optional?
+      // what if parsers returned Either, and Left contained all the elements
+      // it searched before giving up?
+      // is that even meaningful?
+      return (head(source)!, tail(source))
+    }
   }
 }
 
-precedencegroup MapGroup {
-  higherThan: AssignmentPrecedence
-  lowerThan: AdditionPrecedence
-}
-infix operator ^^: MapGroup
-public func ^^<T, U>(
-  _ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
-  fn: @escaping (T) -> U
-  ) -> ([Character]) -> (U, [Character])? {
-  return map(parser, fn: fn)
+// Generate parser which repeatedly executes `parser` on one or more elements
+// of source until the source is either exhausted or `parser` succeeds.
+// This is really a recursive "not until" parser. probably doing too much.
+// See not<T> above.
+//public func notR<T>(_ parser: @escaping HomogeneousParser<T>) -> HeterogeneousParser<T, [T]> {
+//  func foo(acc: [T], input: [T]) -> ([T], [T])? {
+//    let result = parser(input)
+//    if !result.isDefined && input.count > 0 {
+//      return foo(acc: acc + [head(input)!], input: tail(input))
+//    } else if result.isDefined {
+//      return (acc, input)
+//    } else if input.count == 0 {
+//      return nil
+//    }
+//  }
+//
+//  return { source in
+//    return foo(acc: [], input: source)
+//  }
+//}
+
+public func until<T: Equatable>(_ value: T) -> HeterogeneousParser<T, [T]> {
+  return rep1(not(value))
 }
 
-infix operator ^^-: MapGroup
-public func ^^-<T, U>(
-  _ parser: @autoclosure @escaping () -> ([Character]) -> (T, [Character])?,
-  fn: @escaping (T) -> U?
-  ) -> ([Character]) -> (U, [Character])? {
-  return flatMap(parser, fn: fn)
+public func until<T, U>(_ parser: @escaping HeterogeneousParser<T, U>) -> HeterogeneousParser<T, [T]> {
+  return rep1(not(parser))
 }
 
-public func mapResult<T, U>(_ result: (T, [Character]), _ fn: (T) -> U) -> (U, [Character]) {
-  return (fn(result.0), result.1)
-}
-
-public func flatMapResult<T, U>(_ result: (T, [Character]), _ fn: (T) -> U?) -> (U, [Character])? {
-  return fn(result.0).map { ($0, result.1) }
-}
-
-public func placeholder<T>(_ source: [Character]) -> (T, [Character])? { return .none }

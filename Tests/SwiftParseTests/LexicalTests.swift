@@ -2,10 +2,12 @@ import XCTest
 @testable import SwiftParse
 
 class LexicalTests : XCTestCase, ParserHelpers {
-  func testWhitespace() {
-    let result = whitespace([" "])
+  enum ParseToken { case dummy }
 
-    XCTAssertEqual(result!.0, Token.whitespace)
+  func testWhitespace() {
+    let result = whitespaceWithContent([" "])
+    
+    XCTAssertEqual(result!.0, " ")
     XCTAssert(result!.1.isEmpty)
   }
 
@@ -24,10 +26,10 @@ class LexicalTests : XCTestCase, ParserHelpers {
   }
 
   func testIntegerLiteral() {
-    assertParsed(integerLiteral, input: ["1", "2", "3", "4"], Token.integerLiteral(1234), [Character]())
-    assertParsed(integerLiteral, input: ["-", "2", "3", "4"], Token.integerLiteral(-234), [Character]())
-    assertParsed(integerLiteral, input: ["+", "1", "0"], Token.integerLiteral(10), [Character]())
-    assertParsed(integerLiteral, input: ["2", "0", " "], Token.integerLiteral(20), [" "])
+    assertParsed(integerLiteral, input: ["1", "2", "3", "4"], 1234, [Character]())
+    assertParsed(integerLiteral, input: ["-", "2", "3", "4"], -234, [Character]())
+    assertParsed(integerLiteral, input: ["+", "1", "0"], 10, [Character]())
+    assertParsed(integerLiteral, input: ["2", "0", " "], 20, [" "])
   }
 
   func testLetter() {
@@ -40,5 +42,33 @@ class LexicalTests : XCTestCase, ParserHelpers {
 
   func testWord() {
     assertParsed(word("swift"), input: ["s", "w", "i", "f", "t"], "swift", [Character]())
+  }
+
+  func testCommentWithContent() {
+    let parser = commentWithContent(startingWith: "#", until: Character("\n"))
+    let result = parser(["#", "a", "b", "\n"])
+    XCTAssertNotNil(result)
+    XCTAssertEqual(result!.0, "ab")
+  }
+
+  func testCommentWithToken() {
+    let parser = comment(startingWith: "#", token: ParseToken.dummy)
+    let result = parser(["#", "a", "\n"])
+    XCTAssertNotNil(result)
+    XCTAssertEqual(result!.0, ParseToken.dummy)
+  }
+
+  func testCommentStringTerminatorWithContent() {
+    let parser = commentWithContent(startingWith: "/*", until: "*/")
+    let result = parser(stringToArray("/*a\nbc*/"))
+    XCTAssertNotNil(result)
+    XCTAssertEqual(result!.0, "a\nbc")
+  }
+
+  func testCommentStringTerminatorWithToken() {
+    let parser = comment(startingWith: "/*", until: "*/", token: ParseToken.dummy)
+    let result = parser(stringToArray("/*a\nbc*/"))
+    XCTAssertNotNil(result)
+    XCTAssertEqual(result!.0, ParseToken.dummy)
   }
 }
