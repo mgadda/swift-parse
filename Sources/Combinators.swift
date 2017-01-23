@@ -13,7 +13,11 @@ public func head<Element>(_ source: [Element]) -> Element? {
 }
 
 public func tail<Element>(_ source: [Element]) -> [Element] {
-  return Array(source[1..<source.count])
+  if source.count <= 1 {
+    return []
+  } else {
+    return Array(source[1..<source.count])
+  }
 }
 
 public func acceptIf<T>(_ source: [T], fn: @escaping (T) -> Bool) -> (T, [T])? {
