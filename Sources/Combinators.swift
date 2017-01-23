@@ -32,10 +32,10 @@ public func accept<T: Equatable>(_ value: T) -> HomogeneousParser<T> {
 }
 
 // Generates a parser which matches an array of values of type T
-func accept<T: Equatable>(_ ts: [T]) -> HeterogeneousParser<T, [T]> {
-  let parsers = ts.map { accept($0) }
+func accept<T: Equatable>(_ values: [T]) -> HeterogeneousParser<T, [T]> {
+  let parsers = values.map { accept($0) }
   typealias Result = ([T], [T])
-  let initial: Result? = ([], ts)
+  let initial: Result? = ([], values)
 
   return { (source: [T]) -> Result? in
     parsers.reduce(initial, { (maybeResult, parser) in
@@ -193,6 +193,51 @@ public func not<T: Equatable>(_ value: T) -> HomogeneousParser<T> {
   }
 }
 
+// Generate parser which fails if parser succeeds and succeeds if parser fails
+// on `source`.
+public func not<T, U>(_ parser: @escaping HeterogeneousParser<T, U>) -> HomogeneousParser<T> {
+  return { source in
+    let result = parser(source)
+    if result.isDefined {
+      return nil
+    } else {
+      // parser may parse multiple elements, there's no way of knowing
+      // how much of the source it _would_ have consumed, had it succeeded.
+      // is this because parsers are limited to return Optional?
+      // what if parsers returned Either, and Left contained all the elements
+      // it searched before giving up?
+      // is that even meaningful?
+      return (head(source)!, tail(source))
+    }
+  }
+}
+
+// Generate parser which repeatedly executes `parser` on one or more elements
+// of source until the source is either exhausted or `parser` succeeds.
+// This is really a recursive "not until" parser. probably doing too much.
+// See not<T> above.
+//public func notR<T>(_ parser: @escaping HomogeneousParser<T>) -> HeterogeneousParser<T, [T]> {
+//  func foo(acc: [T], input: [T]) -> ([T], [T])? {
+//    let result = parser(input)
+//    if !result.isDefined && input.count > 0 {
+//      return foo(acc: acc + [head(input)!], input: tail(input))
+//    } else if result.isDefined {
+//      return (acc, input)
+//    } else if input.count == 0 {
+//      return nil
+//    }
+//  }
+//
+//  return { source in
+//    return foo(acc: [], input: source)
+//  }
+//}
+
 public func until<T: Equatable>(_ value: T) -> HeterogeneousParser<T, [T]> {
   return rep1(not(value))
 }
+
+public func until<T, U>(_ parser: @escaping HeterogeneousParser<T, U>) -> HeterogeneousParser<T, [T]> {
+  return rep1(not(parser))
+}
+
