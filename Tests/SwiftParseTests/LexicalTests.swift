@@ -44,31 +44,17 @@ class LexicalTests : XCTestCase, ParserHelpers {
     assertParsed(word("swift"), input: ["s", "w", "i", "f", "t"], "swift", [Character]())
   }
 
-  func testCommentWithContent() {
-    let parser = commentWithContent(startingWith: "#", until: Character("\n"))
+  func testComment() {
+    let parser = comment(startingWith: "#", until: Character("\n"))
     let result = parser(["#", "a", "b", "\n"])
     XCTAssertNotNil(result)
     XCTAssertEqual(result!.0, "ab")
   }
 
-  func testCommentWithToken() {
-    let parser = comment(startingWith: "#", token: ParseToken.dummy)
-    let result = parser(["#", "a", "\n"])
-    XCTAssertNotNil(result)
-    XCTAssertEqual(result!.0, ParseToken.dummy)
-  }
-
-  func testCommentStringTerminatorWithContent() {
-    let parser = commentWithContent(startingWith: "/*", until: "*/")
+  func testCommentStringTerminator() {
+    let parser = comment(startingWith: "/*", until: "*/")
     let result = parser(stringToArray("/*a\nbc*/"))
     XCTAssertNotNil(result)
     XCTAssertEqual(result!.0, "a\nbc")
-  }
-
-  func testCommentStringTerminatorWithToken() {
-    let parser = comment(startingWith: "/*", until: "*/", token: ParseToken.dummy)
-    let result = parser(stringToArray("/*a\nbc*/"))
-    XCTAssertNotNil(result)
-    XCTAssertEqual(result!.0, ParseToken.dummy)
   }
 }
