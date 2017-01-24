@@ -191,6 +191,7 @@ public postfix func *?<T, StreamToken>(_ parser: @autoclosure @escaping () -> He
 
 public func placeholder<T, StreamToken>(_ source: [StreamToken]) -> (T, [StreamToken])? { return .none }
 
+// Generate a parser which matches any value of type T except `value`.
 public func not<T: Equatable>(_ value: T) -> HomogeneousParser<T> {
   return { source in
     return acceptIf(source) { $0 != value }
@@ -205,42 +206,21 @@ public func not<T, U>(_ parser: @escaping HeterogeneousParser<T, U>) -> Homogene
     if result.isDefined {
       return nil
     } else {
-      // parser may parse multiple elements, there's no way of knowing
-      // how much of the source it _would_ have consumed, had it succeeded.
-      // is this because parsers are limited to return Optional?
-      // what if parsers returned Either, and Left contained all the elements
-      // it searched before giving up?
-      // is that even meaningful?
       return (head(source)!, tail(source))
     }
   }
 }
 
-// Generate parser which repeatedly executes `parser` on one or more elements
-// of source until the source is either exhausted or `parser` succeeds.
-// This is really a recursive "not until" parser. probably doing too much.
-// See not<T> above.
-//public func notR<T>(_ parser: @escaping HomogeneousParser<T>) -> HeterogeneousParser<T, [T]> {
-//  func foo(acc: [T], input: [T]) -> ([T], [T])? {
-//    let result = parser(input)
-//    if !result.isDefined && input.count > 0 {
-//      return foo(acc: acc + [head(input)!], input: tail(input))
-//    } else if result.isDefined {
-//      return (acc, input)
-//    } else if input.count == 0 {
-//      return nil
-//    }
-//  }
-//
-//  return { source in
-//    return foo(acc: [], input: source)
-//  }
-//}
-
+// Generators parser which repeatedly matches any value of type T except `value`.
+// The resulting parser it not inclusive of the exit condition.
+// For example, `until("c")(["a", "b", "c"])` parses `["a", "b"]` not `["a", "b", "c"]`.
 public func until<T: Equatable>(_ value: T) -> HeterogeneousParser<T, [T]> {
   return rep1(not(value))
 }
 
+// Generators parser which repeatedly executes parser defined by `parser`
+// and succeeds while `parser` fails and until but not including when 
+// `parser` succeeds.
 public func until<T, U>(_ parser: @escaping HeterogeneousParser<T, U>) -> HeterogeneousParser<T, [T]> {
   return rep1(not(parser))
 }
