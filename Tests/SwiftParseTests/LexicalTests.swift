@@ -53,8 +53,9 @@ class LexicalTests : XCTestCase, ParserHelpers {
 
   func testCommentStringTerminator() {
     let parser = comment(startingWith: "/*", until: "*/")
-    let result = parser(stringToArray("/*a\nbc*/"))
+    let result = parser(stringToArray("/*a\nbc*/d"))
     XCTAssertNotNil(result)
     XCTAssertEqual(result!.0, "a\nbc")
+    XCTAssertEqual(result!.1, ["d"])
   }
 }

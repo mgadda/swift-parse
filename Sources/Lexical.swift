@@ -61,7 +61,7 @@ public func integerLiteral(_ source: [Character]) -> (Int, [Character])? {
 }
 
 public func comment(startingWith: String, until stopChar: Character = "\n") -> HeterogeneousParser<Character, String> {
-  let parser = accept(stringToArray(startingWith)) ~ until(stopChar) ^^ { (_, comment) in String(comment) }
+  let parser = accept(stringToArray(startingWith)) ~ until(stopChar) ~ char(stopChar) ^^ { (_, comment, _) in String(comment) }
   return { source in parser(source) }
 }
 
@@ -69,7 +69,7 @@ public func comment(startingWith: String, until endingWith: String) -> Heterogen
   let startWithParser = accept(stringToArray(startingWith))
   let endingWithParser = accept(stringToArray(endingWith))
 
-  let parser = startWithParser ~ until(endingWithParser) ^^ { (_, comment) in String(comment) }
+  let parser = startWithParser ~ until(endingWithParser) ~ endingWithParser ^^ { (_, comment, _) in String(comment) }
   return { source in parser(source) }
 }
 
