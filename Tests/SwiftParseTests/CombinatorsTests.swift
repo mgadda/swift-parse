@@ -56,11 +56,25 @@ class CombinatorsTests : XCTestCase, ParserHelpers {
     assertNotParsed(accept("a"), input: ["b"])
   }
 
-  func testAcceptValues() {
+  func testAcceptMultipleSubset() {
     let parser = accept(["a", "b"])
     let result = parser(["a", "b", "c", "d"])
     XCTAssertNotNil(result)
     XCTAssertEqual(result!.0, ["a", "b"])
     XCTAssertEqual(result!.1, ["c", "d"])
+  }
+
+  func testAcceptMultipleEntirety() {
+    let parser = accept(["a", "b"])
+    let result = parser(["a", "b"])
+    XCTAssertNotNil(result)
+    XCTAssertEqual(result!.0, ["a", "b"])
+    XCTAssertEqual(result!.1, [])
+  }
+
+  func testAcceptMultipleNoMatch() {
+    let parser = accept(["a", "c"])
+    let result = parser(["a", "b", "c", "d"])
+    XCTAssertNil(result)
   }
 }
