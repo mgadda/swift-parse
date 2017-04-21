@@ -8,7 +8,7 @@ iterations and is not stable. Maybe that'll change someday!
 ## Examples
 
 Let's build a parser for the brainfuck language. It's a terrible language, but
-trivial to build a parser for.
+makes for a nice example of how to use SwiftParse.
 
 ```swift
 import SwiftParser
