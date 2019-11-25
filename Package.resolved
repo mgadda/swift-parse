@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "SwiftExt",
+        "repositoryURL": "/Users/mgadda/Documents/Projects/swift-ext",
+        "state": {
+          "branch": "0.4.0",
+          "revision": "8cd23cfee7c127002b69454a0eeb7aa159427130",
+          "version": null
+        }
+      }
+    ]
+  },
+  "version": 1
+}

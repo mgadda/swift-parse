@@ -23,9 +23,9 @@ public func tail<Element>(_ source: [Element]) -> [Element] {
 public func acceptIf<T>(_ source: [T], fn: @escaping (T) -> Bool) -> (T, [T])? {
   return head(source).flatMap {
     if fn($0) {
-      return .some($0, tail(source))
+      return ($0, tail(source))
     } else {
-      return .none
+      return nil
     }
   }
 }
@@ -36,8 +36,8 @@ public func accept<T: Equatable>(_ value: T) -> HomogeneousParser<T> {
 }
 
 // Generates a parser which matches an array of values of type T
-// This implementation is significantly slower than the one below. But it's 
-// elegant! 
+// This implementation is significantly slower than the one below. But it's
+// elegant!
 //public func accept<T: Equatable>(_ values: [T]) -> HeterogeneousParser<T, [T]> {
 //  let parsers = values.map { accept($0) }
 //  typealias Result = ([T], [T])
@@ -87,7 +87,7 @@ public func ~<T, U, StreamToken>(
   _ left: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>,
   _ right: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, U>
   ) -> HeterogeneousParser<StreamToken, (T, U)> {
-  return seq(left, right)
+  return seq(left(), right())
 }
 
 infix operator ~>: MultiplicationPrecedence
@@ -96,7 +96,7 @@ public func ~><T, U, StreamToken>(
   _ right: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, U>
   ) -> HeterogeneousParser<StreamToken, T> {
 
-  return map(seq(left, right)) { $0.0 }
+  return map(seq(left(), right())) { $0.0 }
 }
 
 infix operator <~: MultiplicationPrecedence
@@ -105,7 +105,7 @@ public func <~<T, U, StreamToken>(
   _ right: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, U>
   ) -> HeterogeneousParser<StreamToken, U> {
 
-  return map(seq(left, right)) { $0.1 }
+  return map(seq(left(), right())) { $0.1 }
 }
 
 // TODO: uncomment and devise mechanism to differentiate between single- and
@@ -153,7 +153,7 @@ public func |<T, StreamToken>(
   _ left: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>,
   _ right: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>
   ) -> HeterogeneousParser<StreamToken, T> {
-  return or(left, right)
+  return or(left(), right())
 }
 
 // Generate parser which matches 0 or more of `parser` argument
@@ -178,13 +178,13 @@ public func rep<T, StreamToken>(_ parser: @autoclosure @escaping () -> Heterogen
 
 postfix operator *
 public postfix func *<T, StreamToken>(_ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>) -> ([StreamToken]) -> ([T], [StreamToken]) {
-  return rep(parser)
+  return rep(parser())
 }
 
 // Generate parser which matches 1 or more of `parser` arugment.
 public func rep1<T, StreamToken>(_ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>) -> HeterogeneousParser<StreamToken, [T]> {
   return { source in
-    return seq(parser, rep(parser))(source).map { result in
+    return seq(parser(), rep(parser()))(source).map { result in
       return ([result.0.0] + result.0.1, result.1)
     }
   }
@@ -192,7 +192,7 @@ public func rep1<T, StreamToken>(_ parser: @autoclosure @escaping () -> Heteroge
 
 postfix operator +
 public postfix func +<T, StreamToken>(_ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>) -> HeterogeneousParser<StreamToken, [T]> {
-  return rep1(parser)
+  return rep1(parser())
 }
 
 public func opt<T, StreamToken>(_ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>) -> HeterogeneousParser<StreamToken, T?> {
@@ -203,7 +203,7 @@ public func opt<T, StreamToken>(_ parser: @autoclosure @escaping () -> Heterogen
 
 postfix operator *? // because '?' is forbidden
 public postfix func *?<T, StreamToken>(_ parser: @autoclosure @escaping () -> HeterogeneousParser<StreamToken, T>) -> HeterogeneousParser<StreamToken, T?> {
-  return opt(parser)
+  return opt(parser())
 }
 
 public func placeholder<T, StreamToken>(_ source: [StreamToken]) -> (T, [StreamToken])? { return .none }
@@ -236,7 +236,7 @@ public func until<T: Equatable>(_ value: T) -> HeterogeneousParser<T, [T]> {
 }
 
 // Generators parser which repeatedly executes parser defined by `parser`
-// and succeeds while `parser` fails and until but not including when 
+// and succeeds while `parser` fails and until but not including when
 // `parser` succeeds.
 public func until<T, U>(_ parser: @escaping HeterogeneousParser<T, U>) -> HeterogeneousParser<T, [T]> {
   return rep1(not(parser))

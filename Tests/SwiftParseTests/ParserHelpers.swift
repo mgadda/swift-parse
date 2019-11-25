@@ -24,8 +24,8 @@ extension ParserHelpers {
   ) {
     let result: (U, [T])? = parser(input)
     XCTAssertNotNil(result)
-    XCTAssertEqual(result!.0, val, message, file: file, line: line)
-    XCTAssertEqual(result!.1, remaining, message, file: file, line: line)
+    XCTAssertEqual(result!.0, val, message(), file: file, line: line)
+    XCTAssertEqual(result!.1, remaining, message(), file: file, line: line)
   }
 
   func assertNotParsed<T: Equatable, U: Equatable>(

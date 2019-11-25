@@ -4,7 +4,7 @@ import XCTest
 class CombinatorsTests : XCTestCase, ParserHelpers {
   func testHead() {
     let result = head(["0", "1", "2"])
-    XCTAssertEqual(result!, .some("0"))
+    XCTAssertEqual(result!, "0")
   }
   func testEmptyHead() {
     let result = head([])
