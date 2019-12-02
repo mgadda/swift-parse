@@ -1,10 +1,6 @@
 import SwiftExt
 
-// TODO: replace HeterogeneousParser references below with this typealias
-// once Xcode 8.2, which fixes  https://bugs.swift.org/browse/SR-3640 has 
-// been released.
-//
-// typealias LexicalParser = HeterogeneousParser<Character, String>
+public typealias LexicalParser = HeterogeneousParser<Character, String>
 
 public func whitespace<T>(token: T) -> HeterogeneousParser<Character, T> {
   let parser = whitespaceWithContent ^^ { _ in token }
@@ -26,7 +22,7 @@ public func letter(_ source: [Character]) -> (Character, [Character])? {
   }
 }
 
-public func word(_ value: String) -> HeterogeneousParser<Character, String> {
+public func word(_ value: String) -> LexicalParser {
   let wordParser = letter+ ^^ { String($0) }
 
   return { source in
@@ -34,7 +30,7 @@ public func word(_ value: String) -> HeterogeneousParser<Character, String> {
   }
 }
 
-public func char(_ value: Character) -> HeterogeneousParser<Character, String> {
+public func char(_ value: Character) -> LexicalParser {
   return accept(value) ^^ { String($0) }
 }
 
