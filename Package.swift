@@ -6,13 +6,11 @@ let package = Package(
   products: [
     .library(name: "SwiftParse", targets: ["SwiftParse"])
   ],
-  dependencies: [
-    .package(url: "https://github.com/mgadda/swift-ext", .exact("0.4.0"))
-  ],
+  dependencies: [],
   targets: [
     .target(
       name: "SwiftParse",
-      dependencies: ["SwiftExt"]
+      dependencies: []
     ),
     .testTarget(
       name: "SwiftParseTests",

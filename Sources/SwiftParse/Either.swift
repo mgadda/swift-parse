@@ -1,15 +1,6 @@
-public enum Either<T, U> {
+/// SwiftParse specific implementation of the algebraic Sum type representing
+/// values that are _either_ one type or another.
+public enum Either<T: Equatable, U: Equatable> : Equatable {
   case left(T)
   case right(U)
-
-  public static func ==<A: Equatable, B: Equatable>(lhs: Either<A, B>, rhs: Either<A, B>) -> Bool {
-    switch (lhs, rhs) {
-    case let (.left(leftVal), .left(rightVal)):
-      return leftVal == rightVal
-    case let (.right(leftVal), .right(rightVal)):
-      return leftVal == rightVal
-    default:
-      return false
-    }
-  }
 }
