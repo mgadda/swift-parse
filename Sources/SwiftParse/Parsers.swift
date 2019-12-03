@@ -31,13 +31,21 @@ public func accept(_ pattern: String) -> StringParser<String> {
 /// This parser binds the source type as ArraySlice<T> which cannot be altered for the lifetime of the parse.
 public func accept<T: Equatable>(_ value: T) -> ArrayParser<T, T> {
   return { source in
-    acceptIf(source) { $0.first == value }
+    acceptIf(source) { $0 == value }
   }
 }
 
-public func acceptIf<T>(_ source: ArraySlice<T>, fn: @escaping (ArraySlice<T>) -> Bool) -> (T, ArraySlice<T>)? {
-  if fn(source), let first = source.first {
+public func acceptIf<T>(_ source: ArraySlice<T>, fn: @escaping (T) -> Bool) -> (T, ArraySlice<T>)? {
+  if let first = source.first, fn(first) {
     return (first, source.dropFirst())
+  } else {
+    return nil
+  }
+}
+
+public func acceptIf(_ source: Substring, fn: @escaping (Substring.Element) -> Bool) -> (String, Substring)? {
+  if let first = source.first, fn(first) {
+    return (String(first), source.dropFirst())
   } else {
     return nil
   }
@@ -46,7 +54,7 @@ public func acceptIf<T>(_ source: ArraySlice<T>, fn: @escaping (ArraySlice<T>) -
 /// Generates a parser that matches any value not equal to the first element in source ArraySlice.
 public func reject<T: Equatable>(_ value: T) -> ArrayParser<T, T> {
   return { source in
-    acceptIf(source) { $0.first != value }
+    acceptIf(source) { $0 != value }
   }
 }
 

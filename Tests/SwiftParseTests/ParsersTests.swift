@@ -5,12 +5,20 @@ import XCTest
 infix operator ~>: MultiplicationPrecedence
 
 final class ParserTests: XCTestCase, ParserHelpers {
-    func testAcceptString() {
-      assertParsed(accept("ab"),
-                   input: "abcd",
-                   val: "ab",
-                   remaining: "cd")
+  func testAcceptIfString() {
+    let digit: StringParser<String> = { source in
+      acceptIf(source) { char in char >= "0" && char <= "9" }
     }
+    let digits = digit+
+    assertParsed(digits, input: "10", val: ["1", "0"], remaining: "")
+  }
+  
+  func testAcceptString() {
+    assertParsed(accept("ab"),
+                 input: "abcd",
+                 val: "ab",
+                 remaining: "cd")
+  }
 
   func testAcceptArray() {
     assertParsed(accept(1),
@@ -97,7 +105,6 @@ final class ParserTests: XCTestCase, ParserHelpers {
   }
 
   func testOr() {
-    assertParsed(or(accept("a"), accept("b")), input: "a", val: "a", remaining: "")
     let a = map(accept("a")) { _ in 0 }
     let b = accept("b")
     let parser = or(a, b)
@@ -105,7 +112,6 @@ final class ParserTests: XCTestCase, ParserHelpers {
   }
 
   func testOrOperators() {
-    assertParsed(accept("a") | accept("b"), input: "a", val: "a", remaining: "")
     let a = map(accept("a")) { _ in 0 }
     let b = accept("b")
     assertParsed(a | b, input: "a", val: Either.left(0), remaining: "")
