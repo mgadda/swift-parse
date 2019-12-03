@@ -107,23 +107,6 @@ public func or<T, U, StreamToken>(
   }
 }
 
-/// Generates a homogeneous parser that succeeds if `left` or `right` succeeds. `left` is executed first and then right if `left` fails.
-/// This parser fails if both `left` and `right` fail.
-public func or<T, StreamToken>(
-  _ left: @escaping Parser<StreamToken, T>,
-  _ right: @escaping Parser<StreamToken, T>
-) -> Parser<StreamToken, T> {
-  return { source in
-    if let result = left(source) {
-      return result
-    } else if let result = right(source) {
-      return result
-    } else {
-      return nil
-    }
-  }
-}
-
 /// Generates a parser that always succeeds regardless of whether the underlying parser succeeds.
 /// If `parser` succeeds, its value is returned as the parsed result. If `parser` fails, None is returned
 /// as the parsed result.
