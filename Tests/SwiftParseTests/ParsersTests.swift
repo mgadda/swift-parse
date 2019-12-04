@@ -27,11 +27,18 @@ final class ParserTests: XCTestCase, ParserHelpers {
                  remaining: [2,3])
   }
 
+  func testRejectCharacter() {
+    assertNotParsed(reject(character: "a"), input: "abc")
+    assertParsed(reject(character: "a")+,
+                    input: "bcda",
+                    val: ["b", "c", "d"], remaining: "a")
+  }
+  
   func testRejectArray() {
-    assertNotParsed(reject(1), input: [1,2,3])
-    assertParsed(reject(4),
-                    input: [1,2,3],
-                    val: 1, remaining: [2,3])
+    assertNotParsed(reject(value: 1), input: [1,2,3])
+    assertParsed(reject(value: 4)+,
+                    input: [1,2,3,4],
+                    val: [1,2,3], remaining: [4])
   }
 
   func testSeqArray() {

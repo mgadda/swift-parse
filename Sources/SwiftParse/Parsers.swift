@@ -52,9 +52,15 @@ public func acceptIf(_ source: Substring, fn: @escaping (Substring.Element) -> B
 }
 
 /// Generates a parser that matches any value not equal to the first element in source ArraySlice.
-public func reject<T: Equatable>(_ value: T) -> ArrayParser<T, T> {
+public func reject<T: Equatable>(value: T) -> ArrayParser<T, T> {
   return { source in
     acceptIf(source) { $0 != value }
+  }
+}
+
+public func reject(character: Character) -> StringParser<String> {
+  return { source in
+    acceptIf(source) { $0 != character }
   }
 }
 
