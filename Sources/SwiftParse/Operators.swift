@@ -31,10 +31,10 @@ public func <~<T, U, StreamToken>(
   return map(seq(left, right)) { (_, right) in right }
 }
 
-public func |<T, U, StreamToken>(
+public func |<T, StreamToken>(
   _ left: @escaping Parser<StreamToken, T>,
-  _ right: @escaping Parser<StreamToken, U>
-  ) -> Parser<StreamToken, Either<T, U>> {
+  _ right: @escaping Parser<StreamToken, T>
+  ) -> Parser<StreamToken, T> {
   return or(left, right)
 }
 

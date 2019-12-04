@@ -97,10 +97,10 @@ public func rep1<T, StreamToken>(_ parser: @escaping Parser<StreamToken, T>) -> 
   }
 }
 
-/// Generates a heterogeneous parser that succeeds if `left` or `right` succeeds. `left` is executed first and then right if `left` fails.
-/// This parser fails if both `left` and `right` fail. If `T` != `U` then the parsed output type
-/// of this parser will be `Either<T, U>`.
-public func or<T, U, StreamToken>(
+/// Generates a heterogeneous parser that succeeds if either `left` or `right` succeeds. `left` is
+/// executed first and then right if `left` fails. This parser fails if both `left` and `right` fail.
+/// The parsed output of `left` and `right` must be different types.
+public func either<T, U, StreamToken>(
   _ left: @escaping Parser<StreamToken, T>,
   _ right: @escaping Parser<StreamToken, U>
 ) -> Parser<StreamToken, Either<T, U>> {
@@ -109,6 +109,24 @@ public func or<T, U, StreamToken>(
       return (.left(value), remainder)
     } else if let (value, remainder) = right(source) {
       return (.right(value), remainder)
+    } else {
+      return nil
+    }
+  }
+}
+
+/// Generates a heterogeneous parser that succeeds if either `left` or `right` succeeds. `left` is
+/// executed first and then right if `left` fails. This parser fails if both `left` and `right` fail.
+/// The parsed output of `left` and `right` must be the same  type `T`.
+public func or<T, StreamToken>(
+  _ left: @escaping Parser<StreamToken, T>,
+  _ right: @escaping Parser<StreamToken, T>
+) -> Parser<StreamToken, T> {
+  return { source in
+    if let (value, remainder) = left(source) {
+      return (value, remainder)
+    } else if let (value, remainder) = right(source) {
+      return (value, remainder)
     } else {
       return nil
     }

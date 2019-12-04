@@ -105,16 +105,21 @@ final class ParserTests: XCTestCase, ParserHelpers {
   }
 
   func testOr() {
+    assertParsed(or(accept("a"), accept("b")), input: "b", val: "b", remaining: "")
+  }
+  
+  func testEither() {
     let a = map(accept("a")) { _ in 0 }
     let b = accept("b")
-    let parser = or(a, b)
+    let parser = either(a, b)
     assertParsed(parser, input: "a", val: Either.left(0), remaining: "")
   }
 
   func testOrOperators() {
-    let a = map(accept("a")) { _ in 0 }
+    let a = accept("a")
     let b = accept("b")
-    assertParsed(a | b, input: "a", val: Either.left(0), remaining: "")
+    let aOrB = a | b
+    assertParsed(aOrB, input: "a", val: "a", remaining: "")
   }
 
   func testOpt() {
