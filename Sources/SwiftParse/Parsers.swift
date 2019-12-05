@@ -35,6 +35,19 @@ public func accept<T: Equatable>(_ value: T) -> ArrayParser<T, T> {
   }
 }
 
+/// Generates a parser tha tmatches one of the characterse contained within `oneOf`
+public func accept(oneOf pattern: String) -> StringParser<String> {
+  return { source in
+//    var result: (String, Substring)? = nil
+    for ch in pattern {
+      if let result = acceptIf(source, fn: { $0 == ch }) {
+        return result
+      }
+    }
+    return nil
+  }
+}
+
 public func acceptIf<T>(_ source: ArraySlice<T>, fn: @escaping (T) -> Bool) -> (T, ArraySlice<T>)? {
   if let first = source.first, fn(first) {
     return (first, source.dropFirst())

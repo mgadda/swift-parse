@@ -19,6 +19,10 @@ final class ParserTests: XCTestCase, ParserHelpers {
                  val: "ab",
                  remaining: "cd")
   }
+  
+  func testAcceptOneOf() {
+    assertParsed(accept(oneOf: "ab")+, input: "abc", val: ["a", "b"], remaining: "c")
+  }
 
   func testAcceptArray() {
     assertParsed(accept(1),
