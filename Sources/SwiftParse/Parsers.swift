@@ -27,6 +27,11 @@ public func accept(_ pattern: String) -> StringParser<String> {
   }
 }
 
+public func accept(range: ClosedRange<Character>) -> StringParser<String> {
+  return { source in
+    acceptIf(source) { range.contains($0) }
+  }
+}
 /// Generates a parser that matches exactly one instance of type `T` returning the matched value.
 /// This parser binds the source type as ArraySlice<T> which cannot be altered for the lifetime of the parse.
 public func accept<T: Equatable>(_ value: T) -> ArrayParser<T, T> {

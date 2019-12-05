@@ -30,6 +30,11 @@ final class ParserTests: XCTestCase, ParserHelpers {
                  val: 1,
                  remaining: [2,3])
   }
+  
+  func testAcceptRange() {
+    let lowerAlphabet = accept(range: "a"..."z")+
+    assertParsed(lowerAlphabet, input: "abcd", val: ["a", "b", "c", "d"], remaining: "")
+  }
 
   func testRejectCharacter() {
     assertNotParsed(reject(character: "a"), input: "abc")
