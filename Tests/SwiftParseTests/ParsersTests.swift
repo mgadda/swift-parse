@@ -43,6 +43,12 @@ final class ParserTests: XCTestCase, ParserHelpers {
                     val: ["b", "c", "d"], remaining: "a")
   }
   
+  func testRejectAllOf() {
+    assertParsed(reject(allOf: "-=+"), input: "a", val: "a", remaining: "")
+    assertNotParsed(reject(allOf: "-=+"), input: "-")
+    assertNotParsed(reject(allOf: "-=+"), input: "=")
+  }
+  
   func testRejectArray() {
     assertNotParsed(reject(value: 1), input: [1,2,3])
     assertParsed(reject(value: 4)+,

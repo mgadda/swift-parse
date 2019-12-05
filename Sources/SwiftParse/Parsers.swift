@@ -43,7 +43,6 @@ public func accept<T: Equatable>(_ value: T) -> ArrayParser<T, T> {
 /// Generates a parser tha tmatches one of the characterse contained within `oneOf`
 public func accept(oneOf pattern: String) -> StringParser<String> {
   return { source in
-//    var result: (String, Substring)? = nil
     for ch in pattern {
       if let result = acceptIf(source, fn: { $0 == ch }) {
         return result
@@ -79,6 +78,23 @@ public func reject<T: Equatable>(value: T) -> ArrayParser<T, T> {
 public func reject(character: Character) -> StringParser<String> {
   return { source in
     acceptIf(source) { $0 != character }
+  }
+}
+
+/// Generates a `StringParser` that succeeds if the first character in the string
+/// being parsed is not any of the characters found in `allOf`.
+public func reject(allOf pattern: String) -> StringParser<String> {
+  return { source in
+    for ch in pattern {
+      if let result = acceptIf(source, fn: { $0 == ch }) {
+        return nil
+      }
+    }
+    if let first = source.first {
+      return (String(first), source.dropFirst())
+    } else {
+      return nil
+    }
   }
 }
 
