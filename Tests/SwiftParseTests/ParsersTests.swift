@@ -88,6 +88,11 @@ final class ParserTests: XCTestCase, ParserHelpers {
 
   func testMapOperator() {
     assertParsed(accept("a") ^^ { $0.capitalized }, input: "a", val: "A", remaining: "")
+    
+    let abcd = accept("a") ~ accept("b") ~ accept("c") ~ accept("d")
+    let parser = abcd ^^ { (x, y, z, w) in [x,y,z,w].joined() }
+    
+    assertParsed(parser, input: "abcd", val: "abcd", remaining: "")
   }
 
   func testRep() {

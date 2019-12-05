@@ -51,6 +51,48 @@ public func ^^<T, U, StreamToken>(
   return map(parser, fn: fn)
 }
 
+public func ^^<T1, T2, T3, U, StreamToken>(
+  _ parser: @escaping Parser<StreamToken, ((T1, T2), T3)>,
+  fn: @escaping (T1, T2, T3) -> U
+  ) -> Parser<StreamToken, U> {
+  return map(parser, fn: fn)
+}
+
+public func ^^<T1, T2, T3, T4, U, StreamToken>(
+  _ parser: @escaping Parser<StreamToken, (((T1, T2), T3), T4)>,
+  fn: @escaping (T1, T2, T3, T4) -> U
+  ) -> Parser<StreamToken, U> {
+  return map(parser, fn: fn)
+}
+
+public func ^^<T1, T2, T3, T4, T5, U, StreamToken>(
+  _ parser: @escaping Parser<StreamToken, ((((T1, T2), T3), T4), T5)>,
+  fn: @escaping (T1, T2, T3, T4, T5) -> U
+  ) -> Parser<StreamToken, U> {
+  return map(parser, fn: fn)
+}
+
+public func ^^<T1, T2, T3, T4, T5, T6, U, StreamToken>(
+  _ parser: @escaping Parser<StreamToken, (((((T1, T2), T3), T4), T5), T6)>,
+  fn: @escaping (T1, T2, T3, T4, T5, T6) -> U
+  ) -> Parser<StreamToken, U> {
+  return map(parser, fn: fn)
+}
+
+public func ^^<T1, T2, T3, T4, T5, T6, T7, U, StreamToken>(
+  _ parser: @escaping Parser<StreamToken, ((((((T1, T2), T3), T4), T5), T6), T7)>,
+  fn: @escaping (T1, T2, T3, T4, T5, T6, T7) -> U
+  ) -> Parser<StreamToken, U> {
+  return map(parser, fn: fn)
+}
+
+public func ^^<T1, T2, T3, T4, T5, T6, T7, T8, U, StreamToken>(
+  _ parser: @escaping Parser<StreamToken, (((((((T1, T2), T3), T4), T5), T6), T7), T8)>,
+  fn: @escaping (T1, T2, T3, T4, T5, T6, T7, T8) -> U
+  ) -> Parser<StreamToken, U> {
+  return map(parser, fn: fn)
+}
+
 postfix operator *
 public postfix func *<T, StreamToken>(_ parser: @escaping Parser<StreamToken, T>) -> Parser<StreamToken, [T]> {
   return rep(parser)
