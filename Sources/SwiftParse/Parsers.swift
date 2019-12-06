@@ -96,7 +96,7 @@ public func reject(character: Character) -> StringParser<String> {
 public func reject(allOf pattern: String) -> StringParser<String> {
   return { source in
     for ch in pattern {
-      if let result = acceptIf(source, fn: { $0 == ch }) {
+      if let _ = acceptIf(source, fn: { $0 == ch }) {
         return nil
       }
     }
