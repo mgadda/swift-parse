@@ -5,6 +5,10 @@ import XCTest
 infix operator ~>: MultiplicationPrecedence
 
 final class ParserTests: XCTestCase, ParserHelpers {
+  enum Token : Equatable {
+    case int(Int)
+  }
+  
   func testAcceptIfString() {
     let digit: StringParser<String> = { source in
       acceptIf(source) { char in char >= "0" && char <= "9" }
@@ -29,6 +33,14 @@ final class ParserTests: XCTestCase, ParserHelpers {
                  input: [1,2,3],
                  val: 1,
                  remaining: [2,3])
+  }
+  
+  func testAcceptFn() {
+    
+    let parser = accept { (t: Token) -> Bool in
+      if case .int = t { return true } else { return false }
+    }
+    assertParsed(parser, input: [Token.int(1)], val: Token.int(1), remaining: [])
   }
   
   func testAcceptRange() {

@@ -52,6 +52,16 @@ public func accept(oneOf pattern: String) -> StringParser<String> {
   }
 }
 
+func accept<T>(_ fn: @escaping (T) -> Bool) -> ArrayParser<T, T> {
+  return { source in
+    if let first = source.first, fn(first) {
+      return (first, source.dropFirst())
+    } else {
+      return nil
+    }
+  }
+}
+
 public func acceptIf<T>(_ source: ArraySlice<T>, fn: @escaping (T) -> Bool) -> (T, ArraySlice<T>)? {
   if let first = source.first, fn(first) {
     return (first, source.dropFirst())
