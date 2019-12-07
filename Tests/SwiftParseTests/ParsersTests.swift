@@ -36,11 +36,11 @@ final class ParserTests: XCTestCase, ParserHelpers {
   }
   
   func testAcceptFn() {
-    
-    let parser = accept { (t: Token) -> Bool in
+    func TokenInt(t: Token) -> Bool {
       if case .int = t { return true } else { return false }
     }
-    assertParsed(parser, input: [Token.int(1)], val: Token.int(1), remaining: [])
+    
+    assertParsed(accept(TokenInt), input: [Token.int(1)], val: Token.int(1), remaining: [])
   }
   
   func testAcceptRange() {
