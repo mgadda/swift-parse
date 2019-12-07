@@ -52,7 +52,7 @@ public func accept(oneOf pattern: String) -> StringParser<String> {
   }
 }
 
-func accept<T>(_ fn: @escaping (T) -> Bool) -> ArrayParser<T, T> {
+public func accept<T>(_ fn: @escaping (T) -> Bool) -> ArrayParser<T, T> {
   return { source in
     if let first = source.first, fn(first) {
       return (first, source.dropFirst())
