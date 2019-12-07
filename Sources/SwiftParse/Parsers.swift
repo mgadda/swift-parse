@@ -52,9 +52,7 @@ public func accept(oneOf pattern: String) -> StringParser<String> {
   }
 }
 
-/// Generates a parser that succeeds when the supplied function returns `true` and fails
-/// when it returns `false`.
-public func accept<T>(fn: @escaping (T) -> Bool) -> ArrayParser<T, T> {
+func accept<T>(_ fn: @escaping (T) -> Bool) -> ArrayParser<T, T> {
   return { source in
     if let first = source.first, fn(first) {
       return (first, source.dropFirst())
