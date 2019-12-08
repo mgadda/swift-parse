@@ -25,13 +25,13 @@ public enum Try<T, U: Error> {
     case let .success(t): return t
     case let .failure(e): throw e
     }
-  }  
+  }
 }
 
 infix operator ??
-public func ??<T, U>(try: Try<T, U>, else: T) -> Try<T, U> {
+public func ??<T, U>(try: Try<T, U>, defaultValue: @autoclosure () throws -> T) rethrows -> T {
   switch `try` {
-  case .success: return `try`
-  case .failure: return .success(`else`)
+  case let .success(s): return s
+  case .failure: return try defaultValue()
   }
 }

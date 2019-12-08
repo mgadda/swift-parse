@@ -202,10 +202,11 @@ public func opt<T, StreamToken>(
   _ parser: @escaping Parser<StreamToken, T>
 ) -> Parser<StreamToken, T?> {
   return { source in
-    // this .map hack seems to be necessary to make swift
-    // convert the first non-optional value of the tuple in
-    // an optional one
-    parser(source).map { (t, u) in (t, u) } ?? (nil, source)
+    // TODO: define primitive on Try to support this case
+    switch parser(source) {
+    case let .success(s): return .success(s)
+    case .failure: return .success((nil, source))
+    }
   }
 }
 
