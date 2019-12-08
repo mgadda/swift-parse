@@ -11,10 +11,10 @@
 public func map<T, U, StreamToken>(_ parser: @escaping Parser<StreamToken, T>, fn: @escaping (T) -> U) -> Parser<StreamToken, U> {
   return { source in
     switch parser(source) {
-    case let .some((t, remainder)):
-      return (fn(t), remainder)
+    case let .success((t, remainder)):
+      return .success((fn(t), remainder))
     default:
-      return nil
+      return .failure(ParseError(at: source))
     }
   }
 }

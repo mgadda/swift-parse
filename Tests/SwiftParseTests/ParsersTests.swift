@@ -8,7 +8,7 @@ final class ParserTests: XCTestCase, ParserHelpers {
   enum Token : Equatable {
     case int(Int)
   }
-  
+    
   func testAcceptIfString() {
     let digit: StringParser<String> = { source in
       acceptIf(source) { char in char >= "0" && char <= "9" }
@@ -73,23 +73,23 @@ final class ParserTests: XCTestCase, ParserHelpers {
 
   func testSeqArray() {
     let parser = seq(accept(1), accept(2))
-    let result = parser([1,2,3])
+    let result = try! parser([1,2,3]).get()
     let val = (1,2)
     let remaining = [3]
-
-    XCTAssert(result!.0 == val, "was \(val)")
-    XCTAssertEqual(Array(result!.1), remaining)
+        
+    XCTAssert(result.0 == val, "was \(val)")
+    XCTAssertEqual(Array(result.1), remaining)
   }
 
   func testSeqString() {
     let parser = seq(accept("a"), accept("b"))
-    let result = parser("abcd")
+    let result = try! parser("abcd").get()
     let val = ("a", "b")
     let remaining = "cd"
 
     // TODO: should value be "ab" for strings? and ["a", "b"] for arrays?
-    XCTAssert(result!.0 == val, "expected: \(val) got: \(result!.0)")
-    XCTAssertEqual(String(result!.1), remaining)
+    XCTAssert(result.0 == val, "expected: \(val) got: \(result.0)")
+    XCTAssertEqual(String(result.1), remaining)
   }
 
   func testMultiSeq() {
