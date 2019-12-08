@@ -47,7 +47,11 @@ public func accept(range: ClosedRange<Character>) -> StringParser<String> {
 /// This parser binds the source type as ArraySlice<T> which cannot be altered for the lifetime of the parse.
 public func accept<T: Equatable>(_ value: T) -> ArrayParser<T, T> {
   return { source in
-    acceptIf(source) { $0 == value }
+    let result = acceptIf(source) { $0 == value }
+    if case .failure = result {
+      return .failure(ParseError(at: source, reason: "expected \(value)"))
+    }
+    return result
   }
 }
 
@@ -59,7 +63,7 @@ public func accept(oneOf pattern: String) -> StringParser<String> {
         return .success(result)
       }
     }
-    return .failure(ParseError(at: source))
+    return .failure(ParseError(at: source, reason: "Expected one of \(pattern)"))
   }
 }
 
@@ -114,7 +118,7 @@ public func reject(allOf pattern: String) -> StringParser<String> {
     if let first = source.first {
       return .success((String(first), source.dropFirst()))
     } else {
-      return .failure(ParseError(at: source))
+      return .failure(ParseError(at: source, reason: "One of \(pattern) matched but should not have"))
     }
   }
 }
@@ -185,13 +189,30 @@ public func or<T, StreamToken>(
   _ right: @escaping Parser<StreamToken, T>
 ) -> Parser<StreamToken, T> {
   return { source in
-    if case let .success((value, remainder)) = left(source) {
-      return .success((value, remainder))
-    } else if case let .success((value, remainder)) = right(source) {
-      return .success((value, remainder))
-    } else {
-      return .failure(ParseError(at: source))
+    var underlyingErrors: [String] = []
+    
+    let leftResult = left(source)
+    switch leftResult {
+    case .success: return leftResult
+    case let .failure(e):
+      if let reason = e.reason {
+        underlyingErrors.append(reason)
+      }
     }
+    
+    let rightResult = right(source)
+    switch rightResult {
+    case .success: return rightResult
+    case let .failure(e):
+      if let reason = e.reason {
+        underlyingErrors.append(reason)
+      }
+    }
+    
+    return .failure(ParseError(
+      at: source,
+      reason: underlyingErrors.joined(separator: " or "))
+    )
   }
 }
 

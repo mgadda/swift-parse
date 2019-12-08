@@ -23,7 +23,7 @@ public enum Try<T, U: Error> {
   public func get() throws -> T {
     switch self {
     case let .success(t): return t
-    case let .failure(e): throw e
+    case let .failure(f): throw f
     }
   }
 }
