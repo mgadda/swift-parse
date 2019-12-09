@@ -10,11 +10,8 @@
 /// This parser fails if `parser` fails.
 public func map<T, U, StreamToken>(_ parser: @escaping Parser<StreamToken, T>, fn: @escaping (T) -> U) -> Parser<StreamToken, U> {
   return { source in
-    switch parser(source) {
-    case let .success((t, remainder)):
-      return .success((fn(t), remainder))
-    default:
-      return .failure(ParseError(at: source))
+    parser(source).map { (t, remainder) in
+      (fn(t), remainder)
     }
   }
 }
