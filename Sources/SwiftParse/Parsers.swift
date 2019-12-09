@@ -124,12 +124,12 @@ public func reject(allOf pattern: String) -> StringParser<String> {
 }
 
 public func seq<T, U, StreamToken>(
-  _ left: @escaping Parser<StreamToken, T>,
-  _ right: @escaping Parser<StreamToken, U>
+  _ left: @autoclosure @escaping () -> Parser<StreamToken, T>,
+  _ right: @autoclosure @escaping () -> Parser<StreamToken, U>
 ) -> Parser<StreamToken, (T, U)> {
   return { source in
-    left(source).flatMap { leftResult in
-      right(leftResult.1).map { rightResult in
+    left()(source).flatMap { leftResult in
+      right()(leftResult.1).map { rightResult in
         ((leftResult.0, rightResult.0), rightResult.1)
       }
     }
@@ -138,12 +138,12 @@ public func seq<T, U, StreamToken>(
 
 /// Generators a parser that suceeds if `parser` succeeds zero or more times.
 /// This parser never fails.
-public func rep<T, StreamToken>(_ parser: @escaping Parser<StreamToken, T>) -> Parser<StreamToken, [T]> {
+public func rep<T, StreamToken>(_ parser: @autoclosure @escaping () -> Parser<StreamToken, T>) -> Parser<StreamToken, [T]> {
   return { source in
     // TODO: determine if tail call optimization happens here
     // manually optimize if not.
     func aggregate(source: StreamToken, parsedValues: [T]) -> ([T], StreamToken) {
-      if case let .success(result) = parser(source) {
+      if case let .success(result) = parser()(source) {
         return aggregate(
           source: result.1,
           parsedValues: parsedValues + [result.0]
@@ -157,8 +157,8 @@ public func rep<T, StreamToken>(_ parser: @escaping Parser<StreamToken, T>) -> P
 }
 
 /// Generators a parser that succeeds if `parser` succeeds at least once and fails if `parser` fails.
-public func rep1<T, StreamToken>(_ parser: @escaping Parser<StreamToken, T>) -> Parser<StreamToken, [T]> {
-  return map(seq(parser, rep(parser))) { (first, rest) in
+public func rep1<T, StreamToken>(_ parser: @autoclosure @escaping () -> Parser<StreamToken, T>) -> Parser<StreamToken, [T]> {
+  return map(seq(parser(), rep(parser()))) { (first, rest) in
     [first] + rest
   }
 }
@@ -167,13 +167,13 @@ public func rep1<T, StreamToken>(_ parser: @escaping Parser<StreamToken, T>) -> 
 /// executed first and then right if `left` fails. This parser fails if both `left` and `right` fail.
 /// The parsed output of `left` and `right` must be different types.
 public func either<T, U, StreamToken>(
-  _ left: @escaping Parser<StreamToken, T>,
-  _ right: @escaping Parser<StreamToken, U>
+  _ left: @autoclosure @escaping () -> Parser<StreamToken, T>,
+  _ right: @autoclosure @escaping () -> Parser<StreamToken, U>
 ) -> Parser<StreamToken, Either<T, U>> {
   return { source in
-    if case let .success((value, remainder)) = left(source) {
+    if case let .success((value, remainder)) = left()(source) {
       return .success((.left(value), remainder))
-    } else if case let .success((value, remainder)) = right(source) {
+    } else if case let .success((value, remainder)) = right()(source) {
       return .success((.right(value), remainder))
     } else {
       return .failure(ParseError(at: source))
@@ -185,13 +185,13 @@ public func either<T, U, StreamToken>(
 /// executed first and then right if `left` fails. This parser fails if both `left` and `right` fail.
 /// The parsed output of `left` and `right` must be the same  type `T`.
 public func or<T, StreamToken>(
-  _ left: @escaping Parser<StreamToken, T>,
-  _ right: @escaping Parser<StreamToken, T>
+  _ left: @autoclosure @escaping () -> Parser<StreamToken, T>,
+  _ right: @autoclosure @escaping () -> Parser<StreamToken, T>
 ) -> Parser<StreamToken, T> {
   return { source in
     var underlyingErrors: [String] = []
     
-    let leftResult = left(source)
+    let leftResult = left()(source)
     switch leftResult {
     case .success: return leftResult
     case let .failure(e):
@@ -200,7 +200,7 @@ public func or<T, StreamToken>(
       }
     }
     
-    let rightResult = right(source)
+    let rightResult = right()(source)
     switch rightResult {
     case .success: return rightResult
     case let .failure(e):
@@ -220,11 +220,11 @@ public func or<T, StreamToken>(
 /// If `parser` succeeds, its value is returned as the parsed result. If `parser` fails, None is returned
 /// as the parsed result.
 public func opt<T, StreamToken>(
-  _ parser: @escaping Parser<StreamToken, T>
+  _ parser: @autoclosure @escaping () -> Parser<StreamToken, T>
 ) -> Parser<StreamToken, T?> {
   return { source in
     // TODO: define primitive on Try to support this case
-    switch parser(source) {
+    switch parser()(source) {
     case let .success(s): return .success(s)
     case .failure: return .success((nil, source))
     }
