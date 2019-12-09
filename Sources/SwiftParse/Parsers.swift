@@ -63,7 +63,7 @@ public func accept(oneOf pattern: String) -> StringParser<String> {
         return .success(result)
       }
     }
-    return .failure(ParseError(at: source, reason: "Expected one of \(pattern)"))
+    return .failure(ParseError(at: source, reason: "expected one of \(pattern)"))
   }
 }
 
@@ -72,7 +72,7 @@ public func accept<T>(_ fn: @escaping (T) -> Bool) -> ArrayParser<T, T> {
     if let first = source.first, fn(first) {
       return .success((first, source.dropFirst()))
     } else {
-      return .failure(ParseError(at: source))
+      return .failure(ParseError(at: source, reason: "acceptIf failed for unknown reasons"))
     }
   }
 }
@@ -81,7 +81,7 @@ public func acceptIf<T>(_ source: ArraySlice<T>, fn: @escaping (T) -> Bool) -> P
   if let first = source.first, fn(first) {
     return .success((first, source.dropFirst()))
   } else {
-    return .failure(ParseError(at: source))
+    return .failure(ParseError(at: source, reason: "acceptIf failed for unknown reasons"))
   }
 }
 
@@ -112,13 +112,13 @@ public func reject(allOf pattern: String) -> StringParser<String> {
   return { source in
     for ch in pattern {
       if case .success = acceptIf(source, fn: { $0 == ch }) {
-        return .failure(ParseError(at: source))
+        return .failure(ParseError(at: source, reason: "did not expect \(ch)"))
       }
     }
     if let first = source.first {
       return .success((String(first), source.dropFirst()))
     } else {
-      return .failure(ParseError(at: source, reason: "One of \(pattern) matched but should not have"))
+      return .failure(ParseError(at: source, reason: "unexpectedly at end of input"))
     }
   }
 }
