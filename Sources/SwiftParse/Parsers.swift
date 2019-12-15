@@ -5,9 +5,20 @@
 //  Created by Matt Gadda on 11/30/19.
 //
 
+public struct ParseError<T> : Error {
+  public let at: T
+  public let reason: String?
+  public init(at: T, reason: String? = .none) {
+    self.at = at
+    self.reason = reason
+  }
+}
+
+public typealias ParseResult<T, U> = Try<(U, T), ParseError<T>>
+
 /// A generic parser (a function) from `SourceType` to `OutputType`
 /// The remaining unparsed values are returned as the second element of the tuple.
-public typealias Parser<T, U> = (T) -> (U, T)?
+public typealias Parser<T, U> = (T) -> ParseResult<T, U>
 
 /// A parser from String to instance of type `U`
 public typealias StringParser<U> = Parser<Substring, U>
@@ -20,9 +31,9 @@ public typealias ArrayParser<T, U> = Parser<ArraySlice<T>, U>
 public func accept(_ pattern: String) -> StringParser<String> {
   return { source in
     if source.starts(with: pattern) {
-      return (pattern, source.dropFirst(pattern.count))
+      return .success((pattern, source.dropFirst(pattern.count)))
     } else {
-      return nil
+      return .failure(ParseError(at: source))
     }
   }
 }
@@ -36,45 +47,49 @@ public func accept(range: ClosedRange<Character>) -> StringParser<String> {
 /// This parser binds the source type as ArraySlice<T> which cannot be altered for the lifetime of the parse.
 public func accept<T: Equatable>(_ value: T) -> ArrayParser<T, T> {
   return { source in
-    acceptIf(source) { $0 == value }
+    let result = acceptIf(source) { $0 == value }
+    if case .failure = result {
+      return .failure(ParseError(at: source, reason: "expected \(value)"))
+    }
+    return result
   }
 }
 
-/// Generates a parser tha tmatches one of the characterse contained within `oneOf`
+/// Generates a parser that matches one of the characters contained within `oneOf`
 public func accept(oneOf pattern: String) -> StringParser<String> {
   return { source in
     for ch in pattern {
-      if let result = acceptIf(source, fn: { $0 == ch }) {
-        return result
+      if case let .success(result) = acceptIf(source, fn: { $0 == ch }) {
+        return .success(result)
       }
     }
-    return nil
+    return .failure(ParseError(at: source, reason: "expected one of \(pattern)"))
   }
 }
 
 public func accept<T>(_ fn: @escaping (T) -> Bool) -> ArrayParser<T, T> {
   return { source in
     if let first = source.first, fn(first) {
-      return (first, source.dropFirst())
+      return .success((first, source.dropFirst()))
     } else {
-      return nil
+      return .failure(ParseError(at: source, reason: "acceptIf failed for unknown reasons"))
     }
   }
 }
 
-public func acceptIf<T>(_ source: ArraySlice<T>, fn: @escaping (T) -> Bool) -> (T, ArraySlice<T>)? {
+public func acceptIf<T>(_ source: ArraySlice<T>, fn: @escaping (T) -> Bool) -> ParseResult<ArraySlice<T>, T> {
   if let first = source.first, fn(first) {
-    return (first, source.dropFirst())
+    return .success((first, source.dropFirst()))
   } else {
-    return nil
+    return .failure(ParseError(at: source, reason: "acceptIf failed for unknown reasons"))
   }
 }
 
-public func acceptIf(_ source: Substring, fn: @escaping (Substring.Element) -> Bool) -> (String, Substring)? {
+public func acceptIf(_ source: Substring, fn: @escaping (Substring.Element) -> Bool) -> ParseResult<Substring, String> {
   if let first = source.first, fn(first) {
-    return (String(first), source.dropFirst())
+    return .success((String(first), source.dropFirst()))
   } else {
-    return nil
+    return .failure(ParseError(at: source))
   }
 }
 
@@ -96,25 +111,25 @@ public func reject(character: Character) -> StringParser<String> {
 public func reject(allOf pattern: String) -> StringParser<String> {
   return { source in
     for ch in pattern {
-      if let _ = acceptIf(source, fn: { $0 == ch }) {
-        return nil
+      if case .success = acceptIf(source, fn: { $0 == ch }) {
+        return .failure(ParseError(at: source, reason: "did not expect \(ch)"))
       }
     }
     if let first = source.first {
-      return (String(first), source.dropFirst())
+      return .success((String(first), source.dropFirst()))
     } else {
-      return nil
+      return .failure(ParseError(at: source, reason: "unexpectedly at end of input"))
     }
   }
 }
 
 public func seq<T, U, StreamToken>(
-  _ left: @escaping Parser<StreamToken, T>,
-  _ right: @escaping Parser<StreamToken, U>
+  _ left: @autoclosure @escaping () -> Parser<StreamToken, T>,
+  _ right: @autoclosure @escaping () -> Parser<StreamToken, U>
 ) -> Parser<StreamToken, (T, U)> {
   return { source in
-    left(source).flatMap { leftResult in
-      right(leftResult.1).map { rightResult in
+    left()(source).flatMap { leftResult in
+      right()(leftResult.1).map { rightResult in
         ((leftResult.0, rightResult.0), rightResult.1)
       }
     }
@@ -123,11 +138,12 @@ public func seq<T, U, StreamToken>(
 
 /// Generators a parser that suceeds if `parser` succeeds zero or more times.
 /// This parser never fails.
-public func rep<T, StreamToken>(_ parser: @escaping Parser<StreamToken, T>) -> Parser<StreamToken, [T]> {
+public func rep<T, StreamToken>(_ parser: @autoclosure @escaping () -> Parser<StreamToken, T>) -> Parser<StreamToken, [T]> {
   return { source in
-    // TODO: determine if recursive implementation is inefficient
+    // TODO: determine if tail call optimization happens here
+    // manually optimize if not.
     func aggregate(source: StreamToken, parsedValues: [T]) -> ([T], StreamToken) {
-      if let result = parser(source) {        
+      if case let .success(result) = parser()(source) {
         return aggregate(
           source: result.1,
           parsedValues: parsedValues + [result.0]
@@ -136,13 +152,13 @@ public func rep<T, StreamToken>(_ parser: @escaping Parser<StreamToken, T>) -> P
       return (parsedValues, source)
     }
 
-    return aggregate(source: source, parsedValues: [])
+    return .success(aggregate(source: source, parsedValues: []))
   }
 }
 
 /// Generators a parser that succeeds if `parser` succeeds at least once and fails if `parser` fails.
-public func rep1<T, StreamToken>(_ parser: @escaping Parser<StreamToken, T>) -> Parser<StreamToken, [T]> {
-  return map(seq(parser, rep(parser))) { (first, rest) in
+public func rep1<T, StreamToken>(_ parser: @autoclosure @escaping () -> Parser<StreamToken, T>) -> Parser<StreamToken, [T]> {
+  return map(seq(parser(), rep(parser()))) { (first, rest) in
     [first] + rest
   }
 }
@@ -151,16 +167,16 @@ public func rep1<T, StreamToken>(_ parser: @escaping Parser<StreamToken, T>) -> 
 /// executed first and then right if `left` fails. This parser fails if both `left` and `right` fail.
 /// The parsed output of `left` and `right` must be different types.
 public func either<T, U, StreamToken>(
-  _ left: @escaping Parser<StreamToken, T>,
-  _ right: @escaping Parser<StreamToken, U>
+  _ left: @autoclosure @escaping () -> Parser<StreamToken, T>,
+  _ right: @autoclosure @escaping () -> Parser<StreamToken, U>
 ) -> Parser<StreamToken, Either<T, U>> {
   return { source in
-    if let (value, remainder) = left(source) {
-      return (.left(value), remainder)
-    } else if let (value, remainder) = right(source) {
-      return (.right(value), remainder)
+    if case let .success((value, remainder)) = left()(source) {
+      return .success((.left(value), remainder))
+    } else if case let .success((value, remainder)) = right()(source) {
+      return .success((.right(value), remainder))
     } else {
-      return nil
+      return .failure(ParseError(at: source))
     }
   }
 }
@@ -169,17 +185,34 @@ public func either<T, U, StreamToken>(
 /// executed first and then right if `left` fails. This parser fails if both `left` and `right` fail.
 /// The parsed output of `left` and `right` must be the same  type `T`.
 public func or<T, StreamToken>(
-  _ left: @escaping Parser<StreamToken, T>,
-  _ right: @escaping Parser<StreamToken, T>
+  _ left: @autoclosure @escaping () -> Parser<StreamToken, T>,
+  _ right: @autoclosure @escaping () -> Parser<StreamToken, T>
 ) -> Parser<StreamToken, T> {
   return { source in
-    if let (value, remainder) = left(source) {
-      return (value, remainder)
-    } else if let (value, remainder) = right(source) {
-      return (value, remainder)
-    } else {
-      return nil
+    var underlyingErrors: [String] = []
+    
+    let leftResult = left()(source)
+    switch leftResult {
+    case .success: return leftResult
+    case let .failure(e):
+      if let reason = e.reason {
+        underlyingErrors.append(reason)
+      }
     }
+    
+    let rightResult = right()(source)
+    switch rightResult {
+    case .success: return rightResult
+    case let .failure(e):
+      if let reason = e.reason {
+        underlyingErrors.append(reason)
+      }
+    }
+    
+    return .failure(ParseError(
+      at: source,
+      reason: underlyingErrors.joined(separator: " or "))
+    )
   }
 }
 
@@ -187,14 +220,20 @@ public func or<T, StreamToken>(
 /// If `parser` succeeds, its value is returned as the parsed result. If `parser` fails, None is returned
 /// as the parsed result.
 public func opt<T, StreamToken>(
-  _ parser: @escaping Parser<StreamToken, T>
+  _ parser: @autoclosure @escaping () -> Parser<StreamToken, T>
 ) -> Parser<StreamToken, T?> {
-  return { parser($0) ?? (nil, $0) }
+  return { source in
+    // TODO: define primitive on Try to support this case
+    switch parser()(source) {
+    case let .success(s): return .success(s)
+    case .failure: return .success((nil, source))
+    }
+  }
 }
 
 /// A stand-in parser that fails for all input. It should be used to construct mutually recursive parser definitions
-public func placeholder<T, StreamToken>(_ source: StreamToken) -> (T, StreamToken)? {
-  return nil
+public func placeholder<T, StreamToken>(_ source: StreamToken) -> ParseResult<StreamToken, T> {
+  return .failure(ParseError(at: source, reason: "Not yet implemented"))
 }
 
 // TODO: is it possible to implement generic `not` and `until` parsers?
