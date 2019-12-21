@@ -72,6 +72,7 @@ public func accept<T>(_ fn: @escaping (T) -> Bool) -> ArrayParser<T, T> {
     if let first = source.first, fn(first) {
       return .success((first, source.dropFirst()))
     } else {
+      // TODO: make this error message useful
       return .failure(ParseError(at: source, reason: "acceptIf failed for unknown reasons"))
     }
   }
@@ -81,6 +82,7 @@ public func acceptIf<T>(_ source: ArraySlice<T>, fn: @escaping (T) -> Bool) -> P
   if let first = source.first, fn(first) {
     return .success((first, source.dropFirst()))
   } else {
+    // TODO: make this error message useful
     return .failure(ParseError(at: source, reason: "acceptIf failed for unknown reasons"))
   }
 }

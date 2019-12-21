@@ -1,7 +1,6 @@
 ## Overview
 
-SwiftParse is a parser combinator library. This project is in its earliest
-iterations and is not stable. Maybe that'll change someday!
+SwiftParse is a parser combinator library. This project is still iterating rapidly and is not stable. 
 
 [![Build Status](https://travis-ci.org/mgadda/swift-parse.svg?branch=master)](https://travis-ci.org/mgadda/swift-parse)
 
