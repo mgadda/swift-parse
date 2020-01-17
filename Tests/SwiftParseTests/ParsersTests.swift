@@ -84,7 +84,7 @@ final class ParserTests: XCTestCase, ParserHelpers {
       XCTAssertEqual(remainder, "b")
     case let .failure(e):
       XCTFail(e.reason!)
-    }    
+    }
   }
 
   func testSeqArray() {
@@ -173,6 +173,16 @@ final class ParserTests: XCTestCase, ParserHelpers {
     assertParsed(parser, input: "a", val: Either.left(0), remaining: "")
   }
 
+  func testEof() {
+    let parser = accept("a") ~> eof
+
+    assertParsed(parser, input: "a", val: "a", remaining: "")
+    assertNotParsed(parser, input: "")
+
+    assertParsed(either(accept("a"), eof), input: "a", val: Either.left("a"), remaining: "")
+    assertParsed(either(accept("a"), eof), input: "", val: Either.right(Nothing()), remaining: "")
+  }
+  
   func testOrOperators() {
     let a = accept("a")
     let b = accept("b")

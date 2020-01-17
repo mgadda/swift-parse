@@ -212,7 +212,7 @@ public func either<T, U, StreamToken>(
   }
 }
 
-/// Generates a heterogeneous parser that succeeds if either `left` or `right` succeeds. `left` is
+/// Generates a homogenous parser that succeeds if either `left` or `right` succeeds. `left` is
 /// executed first and then right if `left` fails. This parser fails if both `left` and `right` fail.
 /// The parsed output of `left` and `right` must be the same  type `T`.
 public func or<T, StreamToken>(
@@ -267,4 +267,11 @@ public func placeholder<T, StreamToken>(_ source: StreamToken) -> ParseResult<St
   return .failure(ParseError(at: source, reason: "Not yet implemented"))
 }
 
-// TODO: is it possible to implement generic `not` and `until` parsers?
+/// A parser that matches only if `source` is empty. 
+public func eof<StreamToken: Collection>(_ source: StreamToken) -> ParseResult<StreamToken, Nothing> {
+  if source.isEmpty {
+    return .success((nil, source))
+  } else {
+    return .failure(ParseError(at: source, reason: "Expected eof but found something"))
+  }
+}
