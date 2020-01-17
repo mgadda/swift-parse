@@ -125,6 +125,35 @@ public func reject(allOf pattern: String) -> StringParser<String> {
   }
 }
 
+/// Generates a parser that succeeds when `parser` succeeds but
+/// consumes no tokens from the input. This method could have
+/// been called `guard` if that weren't a keyword.
+func lookAhead<T, StreamToken>(
+  _ parser: @autoclosure @escaping () -> Parser<StreamToken, T>
+) -> Parser<StreamToken, T> {
+  return { source in
+    parser()(source).map { (value, _) in
+      (value, source)
+    }
+  }
+}
+
+/// Generates a parser that succeeds with a void value and consumes
+/// no tokens from the input when `parser` fails; fails when
+/// `parser` succeeds and consumes no tokens from the input.
+func not<T, StreamToken>(
+  _ parser: @autoclosure @escaping () -> Parser<StreamToken, T>
+) -> Parser<StreamToken, Void> {
+  return { source in
+    switch parser()(source) {
+    case let .success((value, _)):
+      return .failure(ParseError(at: source, reason: "Expected failure but found \(value)"))
+    case .failure:
+      return .success(((), source))
+    }
+  }
+}
+
 public func seq<T, U, StreamToken>(
   _ left: @autoclosure @escaping () -> Parser<StreamToken, T>,
   _ right: @autoclosure @escaping () -> Parser<StreamToken, U>

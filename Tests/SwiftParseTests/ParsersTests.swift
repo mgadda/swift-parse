@@ -70,6 +70,22 @@ final class ParserTests: XCTestCase, ParserHelpers {
                     input: [1,2,3,4],
                     val: [1,2,3], remaining: [4])
   }
+  
+  func testGuard() {
+    assertParsed(lookAhead(accept("a")),
+                 input: "a",
+                 val: "a", remaining: "a")
+  }
+  
+  func testNot() {
+    let p = not(accept("a"))
+    switch p("b") {
+    case let .success((_, remainder)):
+      XCTAssertEqual(remainder, "b")
+    case let .failure(e):
+      XCTFail(e.reason!)
+    }    
+  }
 
   func testSeqArray() {
     let parser = seq(accept(1), accept(2))
