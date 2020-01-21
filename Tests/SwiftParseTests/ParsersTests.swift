@@ -10,26 +10,31 @@ final class ParserTests: XCTestCase, ParserHelpers {
   }
     
   func testAcceptIfString() {
-    let digit: StringParser<String> = { source in
-      acceptIf(source) { char in char >= "0" && char <= "9" }
+    let digit: StandardParser<String, Character> = { source in
+      matchOneIf(source) { char in char >= "0" && char <= "9" }
     }
     let digits = digit+
     assertParsed(digits, input: "10", val: ["1", "0"], remaining: "")
   }
   
+  func testMatchChar() {
+    assertParsed(match(element: Character("a")),
+                 input: "abcd", val: "a", remaining: "bcd")
+  }
   func testAcceptString() {
-    assertParsed(accept("ab"),
+    assertParsed(match("ab"),
                  input: "abcd",
-                 val: "ab",
+                 val: AnyCollection("ab"),
                  remaining: "cd")
   }
   
   func testAcceptOneOf() {
-    assertParsed(accept(oneOf: "ab")+, input: "abc", val: ["a", "b"], remaining: "c")
+    assertParsed(match(oneOf: "ab"), input: "a", val: "a", remaining: "")
+    assertParsed(match(oneOf: "ab"), input: "b", val: "b", remaining: "")
   }
 
   func testAcceptArray() {
-    assertParsed(accept(1),
+    assertParsed(match(element: 1),
                  input: [1,2,3],
                  val: 1,
                  remaining: [2,3])
@@ -40,28 +45,20 @@ final class ParserTests: XCTestCase, ParserHelpers {
     func TokenInt(t: Token) -> Bool {
       if case .int = t { return true } else { return false }
     }
-    
-    let parser = accept(TokenInt)
 
-    assertParsed(parser, input: [Token.int(1)], val: Token.int(1), remaining: [])
+    assertParsed(match(TokenInt), input: [Token.int(1)], val: Token.int(1), remaining: [])
   }
   
-  func testAcceptRange() {
-    let lowerAlphabet = accept(range: "a"..."z")+
-    assertParsed(lowerAlphabet, input: "abcd", val: ["a", "b", "c", "d"], remaining: "")
-  }
+//  func testAcceptRange() {
+//    let a2z: ClosedRange<Character> = "a"..."z"
+//    let lowerAlphabet: StandardParser<String, String.Element> = match(range: a2z)
+//    assertParsed(lowerAlphabet, input: "abcd", val: ["a", "b", "c", "d"], remaining: "")
+//  }
 
-  func testRejectCharacter() {
-    assertNotParsed(reject(character: "a"), input: "abc")
-    assertParsed(reject(character: "a")+,
-                    input: "bcda",
-                    val: ["b", "c", "d"], remaining: "a")
-  }
-  
   func testRejectAllOf() {
-    assertParsed(reject(allOf: "-=+"), input: "a", val: "a", remaining: "")
-    assertNotParsed(reject(allOf: "-=+"), input: "-")
-    assertNotParsed(reject(allOf: "-=+"), input: "=")
+    assertParsed(reject(anyOf: "-=+"), input: "a", val: "a", remaining: "")
+    assertNotParsed(reject(anyOf: "-=+"), input: "-")
+    assertNotParsed(reject(anyOf: "-=+"), input: "=")
   }
   
   func testRejectArray() {
@@ -72,24 +69,24 @@ final class ParserTests: XCTestCase, ParserHelpers {
   }
   
   func testGuard() {
-    assertParsed(lookAhead(accept("a")),
+    assertParsed(lookAhead(match("a")),
                  input: "a",
-                 val: "a", remaining: "a")
+                 val: AnyCollection("a"), remaining: "a")
   }
   
   func testNot() {
-    let p = not(accept("a"))
-    switch p("b") {
+    let p = not(match("a"))
+    switch p(AnyCollection("b")) {
     case let .success((_, remainder)):
-      XCTAssertEqual(remainder, "b")
+      XCTAssertEqual(remainder, AnyCollection("b"))
     case let .failure(e):
       XCTFail(e.reason!)
     }
   }
 
   func testSeqArray() {
-    let parser = seq(accept(1), accept(2))
-    let result = try! parser([1,2,3]).get()
+    let parser = compose(match(element: 1), match(element: 2))
+    let result = try! parser(AnyCollection([1,2,3])).get()
     let val = (1,2)
     let remaining = [3]
         
@@ -98,107 +95,112 @@ final class ParserTests: XCTestCase, ParserHelpers {
   }
 
   func testSeqString() {
-    let parser = seq(accept("a"), accept("b"))
-    let result = try! parser("abcd").get()
-    let val = ("a", "b")
-    let remaining = "cd"
+    let parser = map(compose(match("ab"), match("cd"))) {
+      (ab, cd) in String(ab) + String(cd)
+    }
 
-    // TODO: should value be "ab" for strings? and ["a", "b"] for arrays?
-    XCTAssert(result.0 == val, "expected: \(val) got: \(result.0)")
-    XCTAssertEqual(String(result.1), remaining)
+    assertParsed(parser, input: "abcdef", val: "abcd", remaining: "ef")
   }
 
   func testMultiSeq() {
-    let abc = accept("a") ~ accept("b") ~ accept("c")
+    let abc = match("a") ~ match("b") ~ match("c")
 
     let parser = map(abc) { (x, y, z) -> String in
-      return y
+      return String(y)
     }
     assertParsed(parser, input: "abc", val: "b", remaining: "")
 
   }
 
   func testSeqOperators() {
-    let parser = accept("a") <~ accept("b") ~> accept("c")
-    assertParsed(parser, input: "abc", val: "b", remaining: "")
+    let parser = match("a") <~ match("b") ~> match("c")
+    assertParsed(parser, input: "abc", val: AnyCollection("b"), remaining: "")
   }
 
   func testMap() {
-    let parser = map(accept("a")) { $0.capitalized }
+    let parser = map(match("a")) { String($0).capitalized }
     assertParsed(parser, input: "ab", val: "A", remaining: "b")
   }
 
   func testMapOperator() {
-    assertParsed(accept("a") ^^ { $0.capitalized }, input: "a", val: "A", remaining: "")
+    assertParsed(match("a") ^^ { String($0).capitalized }, input: "a", val: "A", remaining: "")
     
-    let abcd = accept("a") ~ accept("b") ~ accept("c") ~ accept("d")
-    let parser = abcd ^^ { (x, y, z, w) in [x,y,z,w].joined() }
+    let abcd = match("a") ~ match("b") ~ match("c") ~ match("d")
+    let parser = abcd ^^ { (x, y, z, w) in AnyCollection([x,y,z,w].joined()) }
     
-    assertParsed(parser, input: "abcd", val: "abcd", remaining: "")
+    assertParsed(parser, input: "abcd", val: AnyCollection("abcd"), remaining: "")
   }
 
   func testRep() {
-    // TODO: should val be "aaa" instead of an array? and would this eliminate the need for many
-    // definitions of map?
-    assertParsed(rep(accept("a")), input: "aaabbb", val: ["a", "a", "a"], remaining: "bbb")
-    assertParsed(rep(accept("a")), input: "bbb", val: [], remaining: "bbb")
+    let aParser = rep(match("a")) ^^ { AnyCollection($0.joined()) }
+    assertParsed(aParser, input: "aaabbb", val: AnyCollection("aaa"), remaining: "bbb")
+    
+    assertParsed(aParser, input: "bbb", val: AnyCollection<Character>([]), remaining: "bbb")
   }
 
   func testRepOperator() {
-    let a = accept("a")
-    assertParsed(a*, input: "aaabbb", val: ["a", "a", "a"], remaining: "bbb")
-    assertParsed(a*, input: "bbb", val: [], remaining: "bbb")
+    let parser = match("a")* ^^ { AnyCollection($0.joined())}
+    assertParsed(parser, input: "aaabbb", val: AnyCollection("aaa"), remaining: "bbb")
+    assertParsed(parser, input: "bbb", val: AnyCollection([]), remaining: "bbb")
   }
 
   func testRep1() {
-    assertParsed(rep1(accept("a")), input: "aaabbb", val: ["a", "a", "a"], remaining: "bbb")
-    assertNotParsed(rep1(accept("a")), input: "bbb")
+    let parser = rep1(match("a")) ^^ { AnyCollection($0.joined()) }
+    assertParsed(parser, input: "aaabbb", val: AnyCollection("aaa"), remaining: "bbb")
+    assertNotParsed(rep1(match("a")), input: "bbb")
 
   }
 
   func testRep1Operator() {
-    let a = accept("a")
-    assertParsed(a+, input: "aaabbb", val: ["a", "a", "a"], remaining: "bbb")
-    assertNotParsed(a+, input: "bbb")
+    let parser = match("a")+ ^^ { AnyCollection($0.joined()) }
+    assertParsed(parser, input: "aaabbb", val: AnyCollection("aaa"), remaining: "bbb")
+    assertNotParsed(parser, input: "bbb")
   }
 
   func testOr() {
-    assertParsed(or(accept("a"), accept("b")), input: "b", val: "b", remaining: "")
+    assertParsed(or(match("a"), match("b")), input: "b", val: AnyCollection("b"), remaining: "")
   }
   
   func testEither() {
-    let a = map(accept("a")) { _ in 0 }
-    let b = accept("b")
+    let a = map(match("a")) { _ in 0 }
+    let b = match("b")
     let parser = either(a, b)
     assertParsed(parser, input: "a", val: Either.left(0), remaining: "")
   }
 
   func testEof() {
-    let parser = accept("a") ~> eof
+    let parser = match("a") ~> eof
 
-    assertParsed(parser, input: "a", val: "a", remaining: "")
+    assertParsed(parser, input: "a", val: AnyCollection("a"), remaining: "")
     assertNotParsed(parser, input: "")
-
-    assertParsed(either(accept("a"), eof), input: "a", val: Either.left("a"), remaining: "")
-    assertParsed(either(accept("a"), eof), input: "", val: Either.right(Nothing()), remaining: "")
+    assertParsed(
+      either(match("a"), eof),
+      input: "a",
+      val: Either.left(AnyCollection("a")),
+      remaining: "")
+    assertParsed(
+      either(match("a"), eof),
+      input: "",
+      val: Either.right(Nothing()),
+      remaining: "")
   }
   
   func testOrOperators() {
-    let a = accept("a")
-    let b = accept("b")
+    let a = match("a")
+    let b = match("b")
     let aOrB = a | b
-    assertParsed(aOrB, input: "a", val: "a", remaining: "")
+    assertParsed(aOrB, input: "a", val: AnyCollection("a"), remaining: "")
   }
 
   func testOpt() {
-    assertParsed(opt(accept("a")), input: "ab", val: "a", remaining: "b")
-    assertParsed(opt(accept("a")), input: "b", val: Optional.none, remaining: "b")
+    assertParsed(opt(match("a")), input: "ab", val: AnyCollection("a"), remaining: "b")
+    assertParsed(opt(match("a")), input: "b", val: Optional.none, remaining: "b")
   }
 
   func testOptOperator() {
-    let a = accept("a")
-    assertParsed(a*?, input: "ab", val: "a", remaining: "b")
-    assertParsed(a*?, input: "b", val: Optional.none, remaining: "b")
+    let a = match("a")*?
+    assertParsed(a, input: "ab", val: AnyCollection("a"), remaining: "b")
+    assertParsed(a, input: "b", val: Optional.none, remaining: "b")
   }
 
   static var allTests = [
