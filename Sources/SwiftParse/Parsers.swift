@@ -45,7 +45,7 @@ public struct ParseError<Element> : Error {
 /// ```
 /// The common types have extensions included with SwiftParse so that the
 /// above Just Works™.
-protocol ParserConvertible {
+public protocol ParserConvertible {
   associatedtype InputType: Collection = Self
   associatedtype ParsedValueType = Self
   associatedtype OutputType: Collection = Self
@@ -58,7 +58,7 @@ public typealias ParseResult<InputType: Collection, ParsedValueType, OutputType>
 
 
 /// A parser which matches the prefix `pattern`
-func match<InputType: Collection>(_ pattern: InputType) ->
+public func match<InputType: Collection>(_ pattern: InputType) ->
   StandardParser<InputType, AnyCollection<InputType.Element>> where
     InputType.Element : Equatable
 {
@@ -71,7 +71,7 @@ func match<InputType: Collection>(_ pattern: InputType) ->
   }
 }
 
-func match<InputElement: Equatable>(element: InputElement) -> StandardParser<AnyCollection<InputElement>, InputElement> {
+public func match<InputElement: Equatable>(element: InputElement) -> StandardParser<AnyCollection<InputElement>, InputElement> {
   return { source in
     return match([element])(source).flatMap { (value, remainder) in
       return value

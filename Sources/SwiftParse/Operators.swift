@@ -6,7 +6,7 @@
 //
 
 infix operator ~: MultiplicationPrecedence
-func ~<T, U, V, LeftParsedValue, RightParsedValue>(
+public func ~<T, U, V, LeftParsedValue, RightParsedValue>(
   _ left: @autoclosure @escaping () -> Parser<T, LeftParsedValue, U>,
   _ right: @autoclosure @escaping () -> Parser<U, RightParsedValue, V>
 ) -> Parser<T, (LeftParsedValue, RightParsedValue), V> {
@@ -14,7 +14,7 @@ func ~<T, U, V, LeftParsedValue, RightParsedValue>(
 }
 
 infix operator ~>: MultiplicationPrecedence
-func ~><T, U, V, LeftParsedValue, RightParsedValue>(
+public func ~><T, U, V, LeftParsedValue, RightParsedValue>(
   _ left: @autoclosure @escaping () -> Parser<T, LeftParsedValue, U>,
   _ right: @autoclosure @escaping () -> Parser<U, RightParsedValue, V>
 ) -> Parser<T, LeftParsedValue, V> {
