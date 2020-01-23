@@ -9,7 +9,7 @@ final class ParserTests: XCTestCase, ParserHelpers {
     case int(Int)
   }
     
-  func testAcceptIfString() {
+  func testMatchIfString() {
     let digit: StandardParser<String, Character> = { source in
       matchOneIf(source) { char in char >= "0" && char <= "9" }
     }
@@ -21,26 +21,26 @@ final class ParserTests: XCTestCase, ParserHelpers {
     assertParsed(match(element: Character("a")),
                  input: "abcd", val: "a", remaining: "bcd")
   }
-  func testAcceptString() {
+  func testMatchString() {
     assertParsed(match("ab"),
                  input: "abcd",
                  val: AnyCollection("ab"),
                  remaining: "cd")
   }
   
-  func testAcceptOneOf() {
+  func testMatchOneOf() {
     assertParsed(match(oneOf: "ab"), input: "a", val: "a", remaining: "")
     assertParsed(match(oneOf: "ab"), input: "b", val: "b", remaining: "")
   }
 
-  func testAcceptArray() {
+  func testMatchArray() {
     assertParsed(match(element: 1),
                  input: [1,2,3],
                  val: 1,
                  remaining: [2,3])
   }
   
-  func testAcceptFn() {
+  func testMatchFn() {
 
     func TokenInt(t: Token) -> Bool {
       if case .int = t { return true } else { return false }
@@ -49,7 +49,7 @@ final class ParserTests: XCTestCase, ParserHelpers {
     assertParsed(match(TokenInt), input: [Token.int(1)], val: Token.int(1), remaining: [])
   }
   
-//  func testAcceptRange() {
+//  func testMatchRange() {
 //    let a2z: ClosedRange<Character> = "a"..."z"
 //    let lowerAlphabet: StandardParser<String, String.Element> = match(range: a2z)
 //    assertParsed(lowerAlphabet, input: "abcd", val: ["a", "b", "c", "d"], remaining: "")
@@ -120,6 +120,13 @@ final class ParserTests: XCTestCase, ParserHelpers {
   func testMap() {
     let parser = map(match("a")) { String($0).capitalized }
     assertParsed(parser, input: "ab", val: "A", remaining: "b")
+  }
+
+  func testMapTuple() {
+    let a = match(element: Character("a"))
+    let str = match("b") ^^ { String($0) }
+    let parser = map(a ~ str) { (a, b) in  String(a).capitalized + String(b) }
+    assertParsed(parser, input: "ab", val: "Ab", remaining: "")
   }
 
   func testMapOperator() {
@@ -202,10 +209,10 @@ final class ParserTests: XCTestCase, ParserHelpers {
     assertParsed(a, input: "ab", val: AnyCollection("a"), remaining: "b")
     assertParsed(a, input: "b", val: Optional.none, remaining: "b")
   }
-
+  
   static var allTests = [
-      ("testAcceptstring", testAcceptString),
-      ("testAcceptArray", testAcceptArray),
+      ("testMatchstring", testMatchString),
+      ("testMatchArray", testMatchArray),
       ("testRejectArray", testRejectArray),
       ("testSeqArray", testSeqArray),
       ("testSeqString", testSeqString),
