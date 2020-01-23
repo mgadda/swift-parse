@@ -18,8 +18,7 @@ public func ~><T, U, V, LeftParsedValue, RightParsedValue>(
   _ left: @autoclosure @escaping () -> Parser<T, LeftParsedValue, U>,
   _ right: @autoclosure @escaping () -> Parser<U, RightParsedValue, V>
 ) -> Parser<T, LeftParsedValue, V> {
-  let c = compose(left(), right())
-  return map(c) { (left, _) in left }
+  return map(compose(left(), right())) { (left, _) in left }  
 }
 
 infix operator <~: MultiplicationPrecedence

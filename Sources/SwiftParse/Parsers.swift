@@ -158,13 +158,13 @@ public func matchOneIf<InputElement>(_ source: AnyCollection<InputElement>, fn: 
   }
 }
 
-public func reject<InputElement>(value: InputElement) -> Parser<InputElement, InputElement, InputElement> where InputElement : Equatable {
+public func reject<InputElement>(element: InputElement) -> Parser<InputElement, InputElement, InputElement> where InputElement : Equatable {
   return { source in
-    matchOneIf(source) { $0 != value }.handle {
+    matchOneIf(source) { $0 != element }.handle {
       if let _ = $0.reason {
         return $0
       } else {
-        return ParseError(at: $0.at, reason: "expected next token to not equal \(value)")
+        return ParseError(at: $0.at, reason: "expected next token to not equal \(element)")
       }
     }
   }

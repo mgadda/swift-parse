@@ -62,8 +62,8 @@ final class ParserTests: XCTestCase, ParserHelpers {
   }
   
   func testRejectArray() {
-    assertNotParsed(reject(value: 1), input: [1,2,3])
-    assertParsed(reject(value: 4)+,
+    assertNotParsed(reject(element: 1), input: [1,2,3])
+    assertParsed(reject(element: 4)+,
                     input: [1,2,3,4],
                     val: [1,2,3], remaining: [4])
   }
