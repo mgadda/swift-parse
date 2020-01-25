@@ -21,10 +21,6 @@ public func match(_ characterSet: CharacterSet) -> StandardParser<String, Charac
   }
 }
 
-public func match(_ character: Character) -> StandardParser<String, Character> {
-  return { match(element: character)($0) }
-}
-
 public func match(_ string: String) -> StandardParser<String, String> {
   return { source in
     let parser = match(prefix: string) ^^ { String($0) }

@@ -31,12 +31,4 @@ final class StringParserTests: XCTestCase, ParserHelpers {
       val: "abc",
       remaining: "d")
   }
-  
-  func testMatchCharacter() {
-    assertParsed(
-      match("a"),
-      input: "ab",
-      val: Character("a"),
-      remaining: "b")
-  }
 }

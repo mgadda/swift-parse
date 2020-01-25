@@ -202,7 +202,7 @@ final class ParserTests: XCTestCase, ParserHelpers {
     assertParsed(a, input: "ab", val: AnyCollection("a"), remaining: "b")
     assertParsed(a, input: "b", val: Optional.none, remaining: "b")
   }
-  
+    
   static var allTests = [
       ("testMatchstring", testMatchString),
       ("testMatchArray", testMatchArray),
