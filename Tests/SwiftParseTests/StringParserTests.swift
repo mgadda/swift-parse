@@ -10,9 +10,33 @@ import XCTest
 
 final class StringParserTests: XCTestCase, ParserHelpers {
   func testMatchCharacterSet() {
-    assertParsed(match(characterSet: CharacterSet.alphanumerics)+, input: "a3*", val: ["a","3"], remaining: "*")
+    assertParsed(
+      match(CharacterSet.alphanumerics)+,
+      input: "a3*",
+      val: ["a","3"],
+      remaining: "*")
     
-    assertParsed(match(characterSet: CharacterSet(charactersIn: "a"..."c"))+, input: "abd", val: ["a","b"], remaining: "d")
-    
+    assertParsed(
+      match(CharacterSet(charactersIn: "a"..."c"))+,
+      input: "abd",
+      val: ["a","b"],
+      remaining: "d"
+    )
+  }
+  
+  func testMatchString() {
+    assertParsed(
+      match("abc"),
+      input: "abcd",
+      val: "abc",
+      remaining: "d")
+  }
+  
+  func testMatchCharacter() {
+    assertParsed(
+      match("a"),
+      input: "ab",
+      val: Character("a"),
+      remaining: "b")
   }
 }

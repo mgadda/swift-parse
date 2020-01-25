@@ -7,7 +7,7 @@
 
 import Foundation
 
-public func match(characterSet: CharacterSet) -> StandardParser<String, Character> {
+public func match(_ characterSet: CharacterSet) -> StandardParser<String, Character> {
   return { source in
     guard let first = source.first else {
       return .failure(ParseError(at: source, reason: "unexpected something but found nothing"))
@@ -18,5 +18,16 @@ public func match(characterSet: CharacterSet) -> StandardParser<String, Characte
     } else {
       return .failure(ParseError(at: source, reason: "Expected to be in set \(characterSet)"))
     }
+  }
+}
+
+public func match(_ character: Character) -> StandardParser<String, Character> {
+  return { match(element: character)($0) }
+}
+
+public func match(_ string: String) -> StandardParser<String, String> {
+  return { source in
+    let parser = match(prefix: string) ^^ { String($0) }
+    return parser(source)
   }
 }
