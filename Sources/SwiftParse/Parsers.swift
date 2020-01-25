@@ -58,22 +58,25 @@ public typealias ParseResult<InputType: Collection, ParsedValueType, OutputType>
 
 
 /// A parser which matches the prefix `pattern`
-public func match<InputType: Collection>(_ pattern: InputType) ->
+public func match<InputType: Collection>(prefix: InputType) ->
   StandardParser<InputType, AnyCollection<InputType.Element>> where
     InputType.Element : Equatable
 {
   return { source in
-    if source.starts(with: pattern, by: { $0 == $1 }) {
-      return .success((source.prefix(pattern.count), AnyCollection(source).dropFirst(pattern.count)))
+    if source.starts(with: prefix, by: { $0 == $1 }) {
+      return .success((source.prefix(prefix.count), AnyCollection(source).dropFirst(prefix.count)))
     } else {
-      return .failure(ParseError(at: source, reason: "expected \(pattern)"))
+      return .failure(ParseError(at: source, reason: "expected \(prefix)"))
     }
   }
 }
 
 public func match<InputElement: Equatable>(element: InputElement) -> StandardParser<AnyCollection<InputElement>, InputElement> {
   return { source in
-    return match([element])(source).flatMap { (value, remainder) in
+    // TODO: should match(prefix:) be rewritten to use match(element:)?
+    // i.e. inverting the dependency? or would that just introduce inefficiencies
+    // and perhaps both of these methods should have their own implementation
+    return match(prefix: [element])(source).flatMap { (value, remainder) in
       return value
         .first
         .liftToTry(orFailWith: ParseError(at: source, reason: "expected \(element) but found nothing"))
@@ -82,46 +85,33 @@ public func match<InputElement: Equatable>(element: InputElement) -> StandardPar
   }
 }
 
-///// Generates a parser which matches one element in `range`
-//func match<T>(range: ClosedRange<T>) -> Parser<T, T, T> {
-//  return { source in
-//    guard let first = source.first else {
-//      return .failure(ParseError(at: source, reason: "expected range \(range) but found nothing"))
-//    }
-//
-//    if range.contains(first) {
-//      return .success((first, source.dropFirst()))
-//    } else {
-//      return .failure(ParseError(at: source, reason: "expected \(first) to be in range \(range)"))
-//    }
-//  }
-//}
-
 func match<InputType: Collection>(range: ClosedRange<InputType.Element>) -> StandardParser<InputType, InputType.Element> {
   return { source in
     guard let first = source.first else {
-      return .failure(ParseError(at: AnyCollection(source), reason: "expected range \(range) but found nothing"))
+      return .failure(ParseError(at: source, reason: "expected range \(range) but found nothing"))
     }
 
     if range.contains(first) {
-      return .success((first, AnyCollection(source).dropFirst()))
+      return .success((first, source.dropFirst()))
     } else {
-      return .failure(ParseError(at: AnyCollection(source), reason: "expected \(first) to be in range \(range)"))
+      return .failure(ParseError(at: source, reason: "expected \(first) to be in range \(range)"))
     }
   }
 }
 
 /// Generates a parser that matches one of the characters contained within `oneOf`
-public func match<InputType: Collection>(oneOf pattern: InputType) -> StandardParser<InputType, InputType.Element> where
-  InputType.Element : Equatable {
-    //Parser<T, T.Element, T.SubSequence> where T.Element : Equatable {
+public func match<InputElement: Equatable, SetLike: SetAlgebra>(oneOf pattern: SetLike) -> Parser<InputElement, InputElement, InputElement> where SetLike.Element == InputElement {
   return { source in
-    for ch in pattern {
-      if case let .success(result) = match(element: ch)(source) {
-        return .success(result)
-      }
+    // TODO: extract this into a method/Result for reuse
+    guard let first = source.first else {
+      return .failure(ParseError(at: source, reason: "unexpected something but found nothing"))
     }
-    return .failure(ParseError(at: AnyCollection(source), reason: "expected one of \(pattern)"))
+    
+    if pattern.contains(first) {
+      return .success((first, source.dropFirst()))
+    }
+    
+    return .failure(ParseError(at: source, reason: "expected one of \(pattern)"))
   }
 }
 
