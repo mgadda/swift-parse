@@ -54,7 +54,8 @@ public protocol ParserConvertible {
 
 /// All parsers return a `ParseResult` to indicate success or failure.
 public typealias ParseResult<InputType: Collection, ParsedValueType, OutputType> =
-  Try<(value: ParsedValueType, out: OutputType), ParseError<InputType.Element>>
+  Result<(value: ParsedValueType, out: OutputType), ParseError<InputType.Element>>
+  
 
 
 /// A parser which matches the prefix `pattern`
@@ -79,7 +80,7 @@ public func match<InputElement: Equatable>(element: InputElement) -> StandardPar
     return match(prefix: [element])(source).flatMap { (value, remainder) in
       return value
         .first
-        .liftToTry(orFailWith: ParseError(at: source, reason: "expected \(element) but found nothing"))
+        .liftToResult(orFailWith: ParseError(at: source, reason: "expected \(element) but found nothing"))
         .map { ($0, remainder) }
     }
   }
@@ -150,7 +151,7 @@ public func matchOneIf<InputElement>(_ source: AnyCollection<InputElement>, fn: 
 
 public func reject<InputElement>(element: InputElement) -> Parser<InputElement, InputElement, InputElement> where InputElement : Equatable {
   return { source in
-    matchOneIf(source) { $0 != element }.handle {
+    matchOneIf(source) { $0 != element }.mapError {
       if let _ = $0.reason {
         return $0
       } else {
@@ -218,7 +219,7 @@ func compose<T, U, V, LeftParsedValue, RightParsedValue>(
     left()(source).flatMap { leftResult in
       right()(leftResult.1).map { rightResult in
         ((leftResult.0, rightResult.0), rightResult.1)
-      }.handle {
+      }.mapError {
         ParseError(at: source, reason: $0.reason)
       }
     }
