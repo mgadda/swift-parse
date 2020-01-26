@@ -118,6 +118,10 @@ final class ParserTests: XCTestCase, ParserHelpers {
     _ = opt("a")
     _ = lookAhead("a")
     _ = not("foo")
+    _ = map("0") { $0 }
+    _ = map("0" ~ "1") { ($0, $1) }
+    _ = "0" ^^ { $0 }
+    _ = "0" ~ "1" ^^ { ($0, $1) }
   }
 
   func testMultiSeq() {

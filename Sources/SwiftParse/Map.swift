@@ -16,6 +16,13 @@ public func map<T, U, InputStreamToken, OutputStreamToken>(_ parser: @autoclosur
   }
 }
 
+public func map<U, ParserLike: ParserConvertible>(
+  _ parser: ParserLike,
+  fn: @escaping (ParserLike.ParsedValueType) -> U
+) -> Parser<ParserLike.InputType.Element, U, ParserLike.OutputType.Element> {
+  map(parser.mkParser(), fn: fn)
+}
+
 public func map<T1, T2, T3, U, InputStreamToken, OutputStreamToken>(
   _ parser: @autoclosure @escaping () -> Parser<InputStreamToken, ((T1, T2), T3), OutputStreamToken>,
   fn: @escaping (T1, T2, T3) -> U
@@ -26,6 +33,14 @@ public func map<T1, T2, T3, U, InputStreamToken, OutputStreamToken>(
       return (fn(t1, t2, t3), remainder)
     }
   }
+}
+
+public func map<T1, T2, T3, U, ParserLike: ParserConvertible>(
+  _ parser: ParserLike,
+  fn: @escaping (ParserLike.ParsedValueType) -> U
+) -> Parser<ParserLike.InputType.Element, U, ParserLike.OutputType.Element>
+  where ParserLike.ParsedValueType == ((T1, T2), T3) {
+  map(parser.mkParser(), fn: fn)
 }
 
 public func map<T1, T2, T3, T4, U, InputStreamToken, OutputStreamToken>(
@@ -40,6 +55,14 @@ public func map<T1, T2, T3, T4, U, InputStreamToken, OutputStreamToken>(
   }
 }
 
+public func map<T1, T2, T3, T4, U, ParserLike: ParserConvertible>(
+  _ parser: ParserLike,
+  fn: @escaping (ParserLike.ParsedValueType) -> U
+) -> Parser<ParserLike.InputType.Element, U, ParserLike.OutputType.Element>
+  where ParserLike.ParsedValueType == (((T1, T2), T3), T4) {
+  map(parser.mkParser(), fn: fn)
+}
+
 public func map<T1, T2, T3, T4, T5, U, InputStreamToken, OutputStreamToken>(
   _ parser: @autoclosure @escaping () -> Parser<InputStreamToken, ((((T1, T2), T3), T4), T5), OutputStreamToken>,
   fn: @escaping (T1, T2, T3, T4, T5) -> U
@@ -50,6 +73,14 @@ public func map<T1, T2, T3, T4, T5, U, InputStreamToken, OutputStreamToken>(
       return (fn(t1, t2, t3, t4, t5), remainder)
     }
   }
+}
+
+public func map<T1, T2, T3, T4, T5, U, ParserLike: ParserConvertible>(
+  _ parser: ParserLike,
+  fn: @escaping (ParserLike.ParsedValueType) -> U
+) -> Parser<ParserLike.InputType.Element, U, ParserLike.OutputType.Element>
+  where ParserLike.ParsedValueType == ((((T1, T2), T3), T4), T5) {
+  map(parser.mkParser(), fn: fn)
 }
 
 public func map<T1, T2, T3, T4, T5, T6, U, InputStreamToken, OutputStreamToken>(
@@ -64,6 +95,14 @@ public func map<T1, T2, T3, T4, T5, T6, U, InputStreamToken, OutputStreamToken>(
   }
 }
 
+public func map<T1, T2, T3, T4, T5, T6, U, ParserLike: ParserConvertible>(
+  _ parser: ParserLike,
+  fn: @escaping (ParserLike.ParsedValueType) -> U
+) -> Parser<ParserLike.InputType.Element, U, ParserLike.OutputType.Element>
+  where ParserLike.ParsedValueType == (((((T1, T2), T3), T4), T5), T6) {
+  map(parser.mkParser(), fn: fn)
+}
+
 public func map<T1, T2, T3, T4, T5, T6, T7, U, InputStreamToken, OutputStreamToken>(
   _ parser: @autoclosure @escaping () -> Parser<InputStreamToken, ((((((T1, T2), T3), T4), T5), T6), T7), OutputStreamToken>,
   fn: @escaping (T1, T2, T3, T4, T5, T6, T7) -> U
@@ -76,6 +115,14 @@ public func map<T1, T2, T3, T4, T5, T6, T7, U, InputStreamToken, OutputStreamTok
   }
 }
 
+public func map<T1, T2, T3, T4, T5, T6, T7, U, ParserLike: ParserConvertible>(
+  _ parser: ParserLike,
+  fn: @escaping (ParserLike.ParsedValueType) -> U
+) -> Parser<ParserLike.InputType.Element, U, ParserLike.OutputType.Element>
+  where ParserLike.ParsedValueType == ((((((T1, T2), T3), T4), T5), T6), T7) {
+  map(parser.mkParser(), fn: fn)
+}
+
 public func map<T1, T2, T3, T4, T5, T6, T7, T8, U, InputStreamToken, OutputStreamToken>(
   _ parser: @autoclosure @escaping () -> Parser<InputStreamToken, (((((((T1, T2), T3), T4), T5), T6), T7), T8), OutputStreamToken>,
   fn: @escaping (T1, T2, T3, T4, T5, T6, T7, T8) -> U
@@ -86,4 +133,12 @@ public func map<T1, T2, T3, T4, T5, T6, T7, T8, U, InputStreamToken, OutputStrea
       return (fn(t1, t2, t3, t4, t5, t6, t7, t8), remainder)
     }
   }
+}
+
+public func map<T1, T2, T3, T4, T5, T6, T7, T8, U, ParserLike: ParserConvertible>(
+  _ parser: ParserLike,
+  fn: @escaping (ParserLike.ParsedValueType) -> U
+) -> Parser<ParserLike.InputType.Element, U, ParserLike.OutputType.Element>
+  where ParserLike.ParsedValueType == (((((((T1, T2), T3), T4), T5), T6), T7), T8) {
+  map(parser.mkParser(), fn: fn)
 }

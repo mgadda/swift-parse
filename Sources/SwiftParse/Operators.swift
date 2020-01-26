@@ -142,11 +142,26 @@ public func ^^<T, U, InputElement, OutputElement>(
   return map(parser(), fn: fn)
 }
 
+public func ^^<U, ParserLike: ParserConvertible>(
+  _ parser: ParserLike,
+  fn: @escaping (ParserLike.ParsedValueType) -> U
+) -> Parser<ParserLike.InputType.Element, U, ParserLike.OutputType.Element> {
+  map(parser, fn: fn)
+}
+
 public func ^^<T1, T2, T3, U, InputElement, OutputElement>(
   _ parser: @autoclosure @escaping () -> Parser<InputElement, ((T1, T2), T3), OutputElement>,
   fn: @escaping (T1, T2, T3) -> U
   ) -> Parser<InputElement, U, OutputElement> {
   return map(parser(), fn: fn)
+}
+
+public func ^^<T1, T2, T3, U, ParserLike: ParserConvertible>(
+  _ parser: ParserLike,
+  fn: @escaping (ParserLike.ParsedValueType) -> U
+) -> Parser<ParserLike.InputType.Element, U, ParserLike.OutputType.Element>
+  where ParserLike.ParsedValueType == ((T1, T2), T3) {
+  map(parser, fn: fn)
 }
 
 public func ^^<T1, T2, T3, T4, U, InputElement, OutputElement>(
@@ -156,11 +171,27 @@ public func ^^<T1, T2, T3, T4, U, InputElement, OutputElement>(
   return map(parser(), fn: fn)
 }
 
+public func ^^<T1, T2, T3, T4, U, ParserLike: ParserConvertible>(
+  _ parser: ParserLike,
+  fn: @escaping (ParserLike.ParsedValueType) -> U
+) -> Parser<ParserLike.InputType.Element, U, ParserLike.OutputType.Element>
+  where ParserLike.ParsedValueType == (((T1, T2), T3), T4) {
+  map(parser, fn: fn)
+}
+
 public func ^^<T1, T2, T3, T4, T5, U, InputElement, OutputElement>(
   _ parser: @autoclosure @escaping () -> Parser<InputElement, ((((T1, T2), T3), T4), T5), OutputElement>,
   fn: @escaping (T1, T2, T3, T4, T5) -> U
   ) -> Parser<InputElement, U, OutputElement> {
   return map(parser(), fn: fn)
+}
+
+public func ^^<T1, T2, T3, T4, T5, U, ParserLike: ParserConvertible>(
+  _ parser: ParserLike,
+  fn: @escaping (ParserLike.ParsedValueType) -> U
+) -> Parser<ParserLike.InputType.Element, U, ParserLike.OutputType.Element>
+  where ParserLike.ParsedValueType == ((((T1, T2), T3), T4), T5) {
+  map(parser, fn: fn)
 }
 
 public func ^^<T1, T2, T3, T4, T5, T6, U, InputElement, OutputElement>(
@@ -170,6 +201,14 @@ public func ^^<T1, T2, T3, T4, T5, T6, U, InputElement, OutputElement>(
   return map(parser(), fn: fn)
 }
 
+public func ^^<T1, T2, T3, T4, T5, T6, U, ParserLike: ParserConvertible>(
+  _ parser: ParserLike,
+  fn: @escaping (ParserLike.ParsedValueType) -> U
+) -> Parser<ParserLike.InputType.Element, U, ParserLike.OutputType.Element>
+  where ParserLike.ParsedValueType == (((((T1, T2), T3), T4), T5), T6) {
+  map(parser, fn: fn)
+}
+
 public func ^^<T1, T2, T3, T4, T5, T6, T7, U, InputElement, OutputElement>(
   _ parser: @autoclosure @escaping () -> Parser<InputElement, ((((((T1, T2), T3), T4), T5), T6), T7), OutputElement>,
   fn: @escaping (T1, T2, T3, T4, T5, T6, T7) -> U
@@ -177,11 +216,27 @@ public func ^^<T1, T2, T3, T4, T5, T6, T7, U, InputElement, OutputElement>(
   return map(parser(), fn: fn)
 }
 
+public func ^^<T1, T2, T3, T4, T5, T6, T7, U, ParserLike: ParserConvertible>(
+  _ parser: ParserLike,
+  fn: @escaping (ParserLike.ParsedValueType) -> U
+) -> Parser<ParserLike.InputType.Element, U, ParserLike.OutputType.Element>
+  where ParserLike.ParsedValueType == ((((((T1, T2), T3), T4), T5), T6), T7) {
+  map(parser, fn: fn)
+}
+
 public func ^^<T1, T2, T3, T4, T5, T6, T7, T8, U, InputElement, OutputElement>(
   _ parser: @autoclosure @escaping () -> Parser<InputElement, (((((((T1, T2), T3), T4), T5), T6), T7), T8), OutputElement>,
   fn: @escaping (T1, T2, T3, T4, T5, T6, T7, T8) -> U
   ) -> Parser<InputElement, U, OutputElement> {
   return map(parser(), fn: fn)
+}
+
+public func ^^<T1, T2, T3, T4, T5, T6, T7, T8, U, ParserLike: ParserConvertible>(
+  _ parser: ParserLike,
+  fn: @escaping (ParserLike.ParsedValueType) -> U
+) -> Parser<ParserLike.InputType.Element, U, ParserLike.OutputType.Element>
+  where ParserLike.ParsedValueType == (((((((T1, T2), T3), T4), T5), T6), T7), T8) {
+  map(parser, fn: fn)
 }
 
 // MARK: * (rep)

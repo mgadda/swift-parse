@@ -17,7 +17,8 @@ public typealias Parser<InputElement, ParsedValue, OutputElement> =
 /// we call this a `StandardParser`.
 public typealias StandardParser<T: Collection, U> = Parser<T.Element, U, T.Element>
 
-public typealias ParserFrom<ParserLike: ParserConvertible> = Parser<ParserLike.InputType.Element, ParserLike.ParsedValueType, ParserLike.OutputType.Element>
+public typealias ParserFrom<ParserLike: ParserConvertible> =
+  Parser<ParserLike.InputType.Element, ParserLike.ParsedValueType, ParserLike.OutputType.Element>
 
 public typealias HomogeneousParser<T: Collection> = StandardParser<T, T>
 
