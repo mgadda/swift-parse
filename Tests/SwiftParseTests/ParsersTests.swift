@@ -78,7 +78,7 @@ final class ParserTests: XCTestCase, ParserHelpers {
     }
   }
 
-  func testSeqArray() {
+  func testComposeArray() {
     let parser = compose(match(element: 1), match(element: 2))
     let result = try! parser(AnyCollection([1,2,3])).get()
     let val = (1,2)
@@ -88,12 +88,36 @@ final class ParserTests: XCTestCase, ParserHelpers {
     XCTAssertEqual(Array(result.1), remaining)
   }
 
-  func testSeqString() {
+  func testComposeString() {
     let parser = map(compose(match(prefix: "ab"), match(prefix: "cd"))) {
       (ab, cd) in String(ab) + String(cd)
     }
 
     assertParsed(parser, input: "abcdef", val: "abcd", remaining: "ef")
+  }
+  
+  func testParserConvertible() {
+    _ = "a" ~ "b"
+    _ = "a" ~ match("b")
+    _ = match("a") ~ "b"
+    _ = match("a") ~ match("b")
+    _ = compose("a", "b")
+    _ = compose("a", match("b"))
+    _ = compose(match("a"), "b")
+    _ = "a" ~> "b"
+    _ = "a" ~> match("b")
+    _ = match("a") ~> "b"
+    _ = "a" <~ "b"
+    _ = "a" <~ match("b")
+    _ = match("a") <~ "b"
+    _ = "a"+
+    _ = rep1("a")
+    _ = "a"*
+    _ = rep("a")
+    _ = "a"*?
+    _ = opt("a")
+    _ = lookAhead("a")
+    _ = not("foo")
   }
 
   func testMultiSeq() {
@@ -207,8 +231,8 @@ final class ParserTests: XCTestCase, ParserHelpers {
       ("testMatchstring", testMatchString),
       ("testMatchArray", testMatchArray),
       ("testRejectArray", testRejectArray),
-      ("testSeqArray", testSeqArray),
-      ("testSeqString", testSeqString),
+      ("testComposeArray", testComposeArray),
+      ("testComposeString", testComposeString),
       ("testMultiSeq", testMultiSeq),
       ("testSeqOperators", testSeqOperators),
       ("testMap", testMap),

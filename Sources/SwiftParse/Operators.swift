@@ -5,6 +5,8 @@
 //  Created by Matt Gadda on 11/30/19.
 //
 
+// MARK: ~ (compose)
+
 infix operator ~: MultiplicationPrecedence
 public func ~<T, U, V, LeftParsedValue, RightParsedValue>(
   _ left: @autoclosure @escaping () -> Parser<T, LeftParsedValue, U>,
@@ -13,6 +15,38 @@ public func ~<T, U, V, LeftParsedValue, RightParsedValue>(
   return compose(left(), right())
 }
 
+public func ~<ParserTU: ParserConvertible, ParserUV: ParserConvertible>(
+  _ left: ParserTU,
+  _ right: ParserUV
+) -> Parser<
+  ParserTU.InputType.Element,
+  (ParserTU.ParsedValueType, ParserUV.ParsedValueType),
+  ParserUV.OutputType.Element> where
+  ParserTU.OutputType == ParserUV.InputType
+{
+  return compose(left, right)
+}
+
+func ~<T, U, LeftParsedValue, ParserUV: ParserConvertible>(
+  _ left: @autoclosure @escaping () -> Parser<T, LeftParsedValue, U>,
+  _ right: ParserUV
+) -> Parser<T, (LeftParsedValue, ParserUV.ParsedValueType), ParserUV.OutputType.Element> where
+  U == ParserUV.InputType.Element
+{
+  return compose(left(), right)
+}
+
+func ~<ParserTU: ParserConvertible, U, V, RightParsedValue>(
+  _ left: ParserTU,
+  _ right: @autoclosure @escaping () -> Parser<U, RightParsedValue, V>
+) -> Parser<ParserTU.InputType.Element, (ParserTU.ParsedValueType, RightParsedValue), V> where
+  ParserTU.OutputType.Element == U
+{
+  return compose(left, right())
+}
+
+// MARK: ~> (compose, ignore right)
+
 infix operator ~>: MultiplicationPrecedence
 public func ~><T, U, V, LeftParsedValue, RightParsedValue>(
   _ left: @autoclosure @escaping () -> Parser<T, LeftParsedValue, U>,
@@ -20,6 +54,30 @@ public func ~><T, U, V, LeftParsedValue, RightParsedValue>(
 ) -> Parser<T, LeftParsedValue, V> {
   return map(compose(left(), right())) { (left, _) in left }  
 }
+
+public func ~><ParserTU: ParserConvertible, ParserUV: ParserConvertible>(
+  _ left: ParserTU,
+  _ right: ParserUV
+) -> Parser<ParserTU.InputType.Element, ParserTU.ParsedValueType, ParserUV.OutputType.Element>
+  where ParserTU.OutputType == ParserUV.InputType {
+    left.mkParser() ~> right.mkParser()
+}
+
+public func ~><ParserLike: ParserConvertible, V, RightParsedValue>(
+  _ left: ParserLike,
+  _ right: @autoclosure @escaping () -> Parser<ParserLike.OutputType.Element, RightParsedValue, V>
+) -> Parser<ParserLike.InputType.Element, ParserLike.ParsedValueType, V> {
+    left.mkParser() ~> right()
+}
+
+public func ~><T, LeftParsedValue, ParserLike: ParserConvertible>(
+  _ left: @autoclosure @escaping () -> Parser<T, LeftParsedValue, ParserLike.InputType.Element>,
+  _ right: ParserLike
+) -> Parser<T, LeftParsedValue, ParserLike.OutputType.Element> {
+  left() ~> right.mkParser()
+}
+
+// MARK: <~ (compose, ignore left)
 
 infix operator <~: MultiplicationPrecedence
 public func <~ <T, U, V, LeftParsedValue, RightParsedValue>(
@@ -30,12 +88,46 @@ public func <~ <T, U, V, LeftParsedValue, RightParsedValue>(
   return map(compose(left(), right())) { (_, right) in right }
 }
 
+public func <~<ParserTU: ParserConvertible, ParserUV: ParserConvertible>(
+  _ left: ParserTU,
+  _ right: ParserUV
+) -> Parser<ParserTU.InputType.Element, ParserUV.ParsedValueType, ParserUV.OutputType.Element>
+  where ParserTU.OutputType == ParserUV.InputType {
+    left.mkParser() <~ right.mkParser()
+}
+
+public func <~<ParserLike: ParserConvertible, V, RightParsedValue>(
+  _ left: ParserLike,
+  _ right: @autoclosure @escaping () -> Parser<ParserLike.OutputType.Element, RightParsedValue, V>
+) -> Parser<ParserLike.InputType.Element, RightParsedValue, V> {
+    left.mkParser() <~ right()
+}
+
+public func <~<T, LeftParsedValue, ParserLike: ParserConvertible>(
+  _ left: @autoclosure @escaping () -> Parser<T, LeftParsedValue, ParserLike.InputType.Element>,
+  _ right: ParserLike
+) -> Parser<T, ParserLike.ParsedValueType, ParserLike.OutputType.Element> {
+  left() <~ right.mkParser()
+}
+
+
+// MARK: | (or)
+
 public func |<T, U, ParsedValue>(
   _ left: @autoclosure @escaping () -> Parser<T, ParsedValue, U>,
   _ right: @autoclosure @escaping () -> Parser<T, ParsedValue, U>
 ) -> Parser<T, ParsedValue, U> {
   return or(left(), right())
 }
+
+public func |<ParserLike: ParserConvertible>(
+  _ left: ParserLike,
+  _ right: ParserLike
+) -> Parser<ParserLike.InputType.Element, ParserLike.ParsedValueType, ParserLike.OutputType.Element> {
+  or(left, right)
+}
+
+// MARK: ^^ (map)
 
 precedencegroup MapGroup {
   higherThan: AssignmentPrecedence
@@ -92,19 +184,46 @@ public func ^^<T1, T2, T3, T4, T5, T6, T7, T8, U, InputElement, OutputElement>(
   return map(parser(), fn: fn)
 }
 
+// MARK: * (rep)
+
 postfix operator *
 public postfix func *<T, InputElement>(_ parser: @autoclosure @escaping () -> Parser<InputElement, T, InputElement>) -> Parser<InputElement, [T], InputElement> {
-  let p = parser()
-  return rep(p)
+  rep(parser())
 }
+
+public postfix func *<ParserLike: ParserConvertible>(
+  _ parser: ParserLike
+) -> StandardParser<ParserLike.InputType, [ParserLike.ParsedValueType]>
+  where ParserLike.InputType == ParserLike.OutputType
+{
+  rep(parser.mkParser())
+}
+
+// MARK: + (rep1)
 
 postfix operator +
 public postfix func +<T, InputElement>(_ parser: @autoclosure @escaping () -> Parser<InputElement, T, InputElement>) -> Parser<InputElement, [T], InputElement> {
   return rep1(parser())
 }
 
+public postfix func +<ParserLike: ParserConvertible>(
+  _ parser: ParserLike
+) -> StandardParser<ParserLike.InputType, [ParserLike.ParsedValueType]>
+  where ParserLike.InputType == ParserLike.OutputType {
+    rep1(parser)
+}
+
+// MARK: *? (opt)
+
 postfix operator *?
 public postfix func *?<InputElement, T>(_ parser: @autoclosure @escaping () -> Parser<InputElement, T, InputElement>) -> Parser<InputElement, T?, InputElement> {
   return opt(parser())
+}
+
+public postfix func *?<ParserLike: ParserConvertible>(
+  _ parser: ParserLike
+) -> StandardParser<ParserLike.InputType, ParserLike.ParsedValueType?>
+  where ParserLike.InputType == ParserLike.OutputType {
+  return opt(parser)
 }
 

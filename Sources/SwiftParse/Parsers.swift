@@ -5,6 +5,8 @@
 //  Created by Matt Gadda on 11/30/19.
 //
 
+// MARK: Parser Types
+
 /// A generic parser (a function) representing a parsing computation
 /// which reads one or more values from some `SourceType` (which must be a `Collection`)
 /// and produces a `ParsedValueType` and some remaining `OutputType`
@@ -15,15 +17,8 @@ public typealias Parser<InputElement, ParsedValue, OutputElement> =
 /// we call this a `StandardParser`.
 public typealias StandardParser<T: Collection, U> = Parser<T.Element, U, T.Element>
 
-/// A parser whose `ParsedValueType` is the same as `InputType.Element`
-/// A `HomogeneousParser` is useful in situations where you need to match a string prefix. The
-/// resulting types are usually all subsequences of the same type.
-/// Example:
-/// ```
-/// match("a")("abc")
-/// ```
-/// This parser expects to parse a `Substring` into a `Substring` (the matched valued) and
-/// another `Substring` (the remainder).
+public typealias ParserFrom<ParserLike: ParserConvertible> = Parser<ParserLike.InputType.Element, ParserLike.ParsedValueType, ParserLike.OutputType.Element>
+
 public typealias HomogeneousParser<T: Collection> = StandardParser<T, T>
 
 /// When parser fails, it returns a `ParseError` describing the reason
@@ -57,6 +52,7 @@ public typealias ParseResult<InputType: Collection, ParsedValueType, OutputType>
   Result<(value: ParsedValueType, out: OutputType), ParseError<InputType.Element>>
   
 
+// MARK: match
 
 /// A parser which matches the prefix `pattern`
 public func match<InputType: Collection>(prefix: InputType) ->
@@ -99,6 +95,7 @@ func match<InputType: Collection>(range: ClosedRange<InputType.Element>) -> Stan
     }
   }
 }
+
 
 /// Generates a parser that matches one of the characters contained within `oneOf`
 public func match<InputElement: Equatable, SetLike: SetAlgebra>(oneOf pattern: SetLike) -> Parser<InputElement, InputElement, InputElement> where SetLike.Element == InputElement {
@@ -149,6 +146,8 @@ public func matchOneIf<InputElement>(_ source: AnyCollection<InputElement>, fn: 
   }
 }
 
+// MARK: reject
+
 public func reject<InputElement>(element: InputElement) -> Parser<InputElement, InputElement, InputElement> where InputElement : Equatable {
   return { source in
     matchOneIf(source) { $0 != element }.mapError {
@@ -179,6 +178,8 @@ public func reject<T: Collection>(anyOf pattern: T) -> StandardParser<T, T.Eleme
   }
 }
 
+// MARK: lookAhead
+
 /// Generates a parser that succeeds when `parser` succeeds but
 /// consumes no tokens from the input. This method could have
 /// been called `guard` if that weren't a keyword.
@@ -191,6 +192,14 @@ public func lookAhead<T, InputElement>(
     }
   }
 }
+
+public func lookAhead<ParserLike: ParserConvertible>(
+  _ parser: ParserLike
+) -> ParserFrom<ParserLike> where ParserLike.InputType == ParserLike.OutputType {
+  lookAhead(parser.mkParser())
+}
+
+// MARK: not
 
 /// Generates a parser that succeeds with a void value and consumes
 /// no tokens from the input when `parser` fails; fails when
@@ -207,6 +216,17 @@ public func not<ParsedValue, InputElement>(
     }
   }
 }
+
+public func not<ParserLike: ParserConvertible>(
+  _ parser: ParserLike
+) -> Parser<ParserLike.InputType.Element, Void, ParserLike.OutputType.Element> where
+  ParserLike.InputType == ParserLike.OutputType {
+    return { source in
+      not(parser.mkParser())(source)
+    }
+}
+
+// MARK: compose
 
 /// A parser that succeeds when `left` and `right` both succeed in order.
 /// The output of the first is passed to the input of the second.
@@ -256,6 +276,8 @@ func compose<ParserTU: ParserConvertible, U, V, RightParsedValue>(
   return compose(left.mkParser(), right())
 }
 
+// MARK: rep
+
 /// Generates a parser that suceeds if `parser` succeeds zero or more times.
 /// This parser never fails.
 public func rep<InputElement, ParsedValue>(_ parser: @autoclosure @escaping () -> Parser<InputElement, ParsedValue, InputElement>) -> Parser<InputElement, [ParsedValue], InputElement> {
@@ -276,6 +298,16 @@ public func rep<InputElement, ParsedValue>(_ parser: @autoclosure @escaping () -
   }
 }
 
+public func rep<ParserLike: ParserConvertible>(
+  _ parser: ParserLike
+) -> StandardParser<ParserLike.InputType, [ParserLike.ParsedValueType]>
+  where ParserLike.InputType == ParserLike.OutputType
+{
+  return rep(parser.mkParser())
+}
+
+// MARK: rep1
+
 /// Generators a parser that succeeds if `parser` succeeds at least once and fails if `parser` fails.
 public func rep1<InputElement, ParsedValue>(_ parser: @autoclosure @escaping () -> Parser<InputElement, ParsedValue, InputElement>) -> Parser<InputElement, [ParsedValue], InputElement> {
   let repParser = rep(parser())
@@ -283,6 +315,15 @@ public func rep1<InputElement, ParsedValue>(_ parser: @autoclosure @escaping () 
     [first] + rest
   }
 }
+
+public func rep1<ParserLike: ParserConvertible>(
+  _ parser: ParserLike
+) -> StandardParser<ParserLike.InputType, [ParserLike.ParsedValueType]>
+  where ParserLike.InputType == ParserLike.OutputType {
+    rep1(parser.mkParser())
+}
+
+// MARK: either
 
 /// Generates a heterogeneous parser that succeeds if either `left` or `right` succeeds. `left` is
 /// executed first and then right if `left` fails. This parser fails if both `left` and `right` fail.
@@ -301,6 +342,8 @@ public func either<T, U, InputElement, OutputElement>(
     }
   }
 }
+
+// MARK: or
 
 /// Generates a homogenous parser that succeeds if either `left` or `right` succeeds. `left` is
 /// executed first and then right if `left` fails. This parser fails if both `left` and `right` fail.
@@ -337,6 +380,29 @@ public func or<T, U, ParsedValue>(
   }
 }
 
+public func or<ParserLike: ParserConvertible>(
+  _ left: @autoclosure @escaping () -> ParserFrom<ParserLike>,
+  _ right: ParserLike
+) -> ParserFrom<ParserLike> {
+  or(left(), right.mkParser())
+}
+
+public func or<ParserLike: ParserConvertible>(
+  _ left: ParserLike,
+  _ right: @autoclosure @escaping () -> ParserFrom<ParserLike>
+) -> ParserFrom<ParserLike> {
+  or(left.mkParser(), right())
+}
+
+public func or<ParserLike: ParserConvertible>(
+  _ left: ParserLike,
+  _ right: ParserLike
+) -> ParserFrom<ParserLike> {
+  or(left.mkParser(), right.mkParser())
+}
+
+// MARK: opt
+
 /// Generates a parser that always succeeds regardless of whether the underlying parser succeeds.
 /// If `parser` succeeds, its value is returned as the parsed result. If `parser` fails, None is returned
 /// as the parsed result.
@@ -349,6 +415,13 @@ public func opt<InputElement, ParsedValue>(
     case .failure: return .success((nil, source))
     }
   }
+}
+
+public func opt<ParserLike: ParserConvertible>(
+  _ parser: ParserLike
+) -> StandardParser<ParserLike.InputType, ParserLike.ParsedValueType?>
+  where ParserLike.InputType == ParserLike.OutputType {
+  opt(parser.mkParser())
 }
 
 /// A stand-in parser that fails for all input. It should be used to construct mutually recursive parser definitions

@@ -27,3 +27,21 @@ public func match(_ string: String) -> StandardParser<String, String> {
     return parser(source)
   }
 }
+
+extension String : ParserConvertible {
+  public func mkParser() -> StandardParser<String, String> {
+    return { source in
+      let parser = match(prefix: self) ^^ { String($0) }
+      return parser(source)
+    }
+  }
+}
+
+extension CharacterSet : ParserConvertible {
+  public typealias InputType = String
+  public typealias ParsedValueType = Character
+  public typealias OutputType = String
+  public func mkParser() -> StandardParser<String, Character> {
+    match(self)
+  }
+}
