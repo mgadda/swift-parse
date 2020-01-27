@@ -123,8 +123,22 @@ public func |<T, U, ParsedValue>(
 public func |<ParserLike: ParserConvertible>(
   _ left: ParserLike,
   _ right: ParserLike
-) -> Parser<ParserLike.InputType.Element, ParserLike.ParsedValueType, ParserLike.OutputType.Element> {
+) -> ParserFrom<ParserLike> {
   or(left, right)
+}
+
+public func |<ParserLike: ParserConvertible>(
+  _ left: @autoclosure @escaping () -> ParserFrom<ParserLike>,
+  _ right: ParserLike
+) -> ParserFrom<ParserLike> {
+  or(left(), right)
+}
+
+public func |<ParserLike: ParserConvertible>(
+  _ left: ParserLike,
+  _ right: @autoclosure @escaping () -> ParserFrom<ParserLike>
+) -> ParserFrom<ParserLike> {
+  or(left, right())
 }
 
 // MARK: ^^ (map)

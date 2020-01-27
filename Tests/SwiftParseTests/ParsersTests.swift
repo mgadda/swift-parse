@@ -122,6 +122,7 @@ final class ParserTests: XCTestCase, ParserHelpers {
     _ = map("0" ~ "1") { ($0, $1) }
     _ = "0" ^^ { $0 }
     _ = "0" ~ "1" ^^ { ($0, $1) }
+    _ = "a" | "b" | "c"
   }
 
   func testMultiSeq() {
