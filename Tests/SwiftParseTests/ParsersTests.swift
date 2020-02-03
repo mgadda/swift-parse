@@ -97,10 +97,10 @@ final class ParserTests: XCTestCase, ParserHelpers {
   }
   
   func testParserConvertible() {
-    _ = "a" ~ "b"
     _ = "a" ~ match("b")
     _ = match("a") ~ "b"
     _ = match("a") ~ match("b")
+    _ = "a" ~ Character("b")
     _ = compose("a", "b")
     _ = compose("a", match("b"))
     _ = compose(match("a"), "b")

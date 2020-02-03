@@ -37,6 +37,15 @@ extension String : ParserConvertible {
   }
 }
 
+extension Character : ParserConvertible {
+  public typealias InputType = String
+  public typealias ParsedValueType = Character
+  public typealias OutputType = String
+  public func mkParser() -> StandardParser<String, Character> {
+    match(element: self)
+  }
+}
+
 extension CharacterSet : ParserConvertible {
   public typealias InputType = String
   public typealias ParsedValueType = Character
