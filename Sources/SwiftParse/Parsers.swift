@@ -425,6 +425,15 @@ public func opt<ParserLike: ParserConvertible>(
   opt(parser.mkParser())
 }
 
+/// Generates a parser which always succeeds with the next element in the input
+/// unless there is no next element.
+public func always<InputElement>(source: AnyCollection<InputElement>) -> ParseResult<AnyCollection<InputElement>, InputElement, AnyCollection<InputElement>> {
+  guard let first = source.first else {
+    return .failure(ParseError(at: source, reason: "Expected something but found nothing"))
+  }
+  return .success((value: first, out: source.dropFirst()))
+}
+
 // MARK: and
 
 /// Generates a parse which succeeds with the parsed value from `left` when

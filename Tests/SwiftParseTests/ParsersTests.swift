@@ -248,6 +248,10 @@ final class ParserTests: XCTestCase, ParserHelpers {
     assertNotParsed("a" & "b", input: "a")
   }
   
+  func testAlways() {
+    assertParsed(always, input: "anything", val: "a", remaining: AnyCollection("nything"))
+  }
+    
   static var allTests = [
       ("testMatchstring", testMatchString),
       ("testMatchArray", testMatchArray),
