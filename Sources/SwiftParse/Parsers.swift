@@ -425,6 +425,65 @@ public func opt<ParserLike: ParserConvertible>(
   opt(parser.mkParser())
 }
 
+// MARK: and
+
+/// Generates a parse which succeeds with the parsed value from `left` when
+/// `left` and `right` both succeed.
+///
+/// Unlike `compose`, the remainder after executing `left` is not then passed
+/// to `right`. They are not composed: both parsers operate in parallel starting
+/// at the same place in the input stream.
+///
+/// This parser can be useful when you want to subtract possible elements away from
+/// an allowable set defined by `left`, especially when the thing being subtracted
+/// away from `left` is a complex parser itself.
+///
+/// The output of `right` is assumed to be unneeded.
+///
+/// Example:
+/// ```
+/// let parser = and(match(CharacterSet.alphanumeric), not(match(element: Character("a"))))
+/// parser(AnyCollection("b")) // => Result.success(...)
+/// parser(AnyCollection("a")) // => Result.failure(...)
+/// ```
+public func and<T, U, V, LeftValue, RightValue>(
+  _ left: @autoclosure @escaping () -> Parser<T, LeftValue, U>,
+  _ right: @autoclosure @escaping () -> Parser<T, RightValue, V>) -> Parser<T, LeftValue, U> {
+  return { source in
+    switch (left()(source), right()(source)) {
+    case let (.success(value, out), .success):
+      return .success((value, out))
+    case let (.failure(error), _):
+      return .failure(ParseError(at: error.at, reason: error.reason))
+    case let (_, .failure(error)):
+      return .failure(ParseError(at: error.at, reason: error.reason))
+    }
+  }
+}
+// TODO: should `and` return a tuple to allow the use of the right's output?
+public func and<V, RightValue, ParserTU: ParserConvertible>(
+  _ left: ParserTU,
+  _ right: @autoclosure @escaping () -> Parser<ParserTU.InputType.Element, RightValue, V>
+) -> ParserFrom<ParserTU>
+{
+  and(left.mkParser(), right())
+}
+
+public func and<U, LeftValue, ParserTV: ParserConvertible>(
+  _ left: @autoclosure @escaping () -> Parser<ParserTV.InputType.Element, LeftValue, U>,
+  _ right: ParserTV
+) -> Parser<ParserTV.InputType.Element, LeftValue, U> {
+  and(left(), right.mkParser())
+}
+
+public func and<ParserTU: ParserConvertible, ParserTV: ParserConvertible>(
+  _ left: ParserTU,
+  _ right: ParserTV) -> ParserFrom<ParserTU>
+  where ParserTU.InputType == ParserTV.InputType
+{
+  and(left.mkParser(), right.mkParser())
+}
+
 /// A stand-in parser that fails for all input. It should be used to construct mutually recursive parser definitions
 public func placeholder<T, InputElement>(_ source: AnyCollection<InputElement>) -> ParseResult<AnyCollection<InputElement>, T, AnyCollection<InputElement>> {
   return .failure(ParseError(at: source, reason: "Not yet implemented"))

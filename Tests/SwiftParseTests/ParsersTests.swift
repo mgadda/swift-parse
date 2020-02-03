@@ -123,6 +123,15 @@ final class ParserTests: XCTestCase, ParserHelpers {
     _ = "0" ^^ { $0 }
     _ = "0" ~ "1" ^^ { ($0, $1) }
     _ = "a" | "b" | "c"
+    _ = and("a", "b")
+    _ = and(match("a"), "b")
+    _ = and("a", match("b"))
+    _ = and(match("a"), match("b"))
+    _ = "a" & "b"
+    _ = match("a") & "b"
+    _ = "a" & match("b")
+    _ = match("a") & match("b")
+    
   }
 
   func testMultiSeq() {
@@ -232,6 +241,13 @@ final class ParserTests: XCTestCase, ParserHelpers {
     assertParsed(a, input: "b", val: Optional.none, remaining: "b")
   }
     
+  func testAnd() {
+    let ab = CharacterSet(charactersIn: "ab") & not("b")
+    assertParsed(ab, input: "a", val: "a", remaining: "")
+    assertNotParsed(ab, input: "b")
+    assertNotParsed("a" & "b", input: "a")
+  }
+  
   static var allTests = [
       ("testMatchstring", testMatchString),
       ("testMatchArray", testMatchArray),

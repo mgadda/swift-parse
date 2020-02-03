@@ -296,3 +296,33 @@ public postfix func *?<ParserLike: ParserConvertible>(
   return opt(parser)
 }
 
+// MARK: & (and)
+
+infix operator &: MultiplicationPrecedence
+public func &<T, U, V, LeftValue, RightValue>(
+_ left: @autoclosure @escaping () -> Parser<T, LeftValue, U>,
+_ right: @autoclosure @escaping () -> Parser<T, RightValue, V>) -> Parser<T, LeftValue, U> {
+  and(left(), right())
+}
+
+public func &<V, RightValue, ParserTU: ParserConvertible>(
+  _ left: ParserTU,
+  _ right: @autoclosure @escaping () -> Parser<ParserTU.InputType.Element, RightValue, V>
+  ) -> ParserFrom<ParserTU> {
+  and(left, right())
+}
+
+public func &<U, LeftValue, ParserTV: ParserConvertible>(
+  _ left: @autoclosure @escaping () -> Parser<ParserTV.InputType.Element, LeftValue, U>,
+  _ right: ParserTV
+) -> Parser<ParserTV.InputType.Element, LeftValue, U> {
+  and(left(), right)
+}
+
+public func &<ParserTU: ParserConvertible, ParserTV: ParserConvertible>(
+  _ left: ParserTU,
+  _ right: ParserTV) -> ParserFrom<ParserTU>
+  where ParserTU.InputType == ParserTV.InputType
+{
+  and(left, right)
+}
