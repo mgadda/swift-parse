@@ -460,7 +460,7 @@ public func and<T, U, V, LeftValue, RightValue>(
   _ right: @autoclosure @escaping () -> Parser<T, RightValue, V>) -> Parser<T, LeftValue, U> {
   return { source in
     switch (left()(source), right()(source)) {
-    case let (.success(value, out), .success):
+    case let (.success((value, out)), .success):
       return .success((value, out))
     case let (.failure(error), _):
       return .failure(ParseError(at: error.at, reason: error.reason))
